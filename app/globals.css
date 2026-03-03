@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0d4a2e;
+  --bg-light: #11593a;
+  --bg-dark: #0a3d25;
+  --bg-glow1: rgba(17, 89, 58, 0.6);
+  --bg-glow2: rgba(10, 61, 37, 0.4);
+  --bg-glow3: rgba(13, 74, 46, 0.3);
+  --accent: #d4a843;
+  --accent-light: #e0bd6a;
+  --accent-dark: #b8922e;
+  --text-primary: #f5f0e8;
+  --text-secondary: rgba(134, 239, 172, 0.5);
+  --text-muted: #059669;
+  --text-on-accent: #0a3d25;
+  --card-face: #f5f0e8;
+  --card-back: #1a3a5c;
+  --card-text: #0a3d25;
+  --border-subtle: rgba(5, 150, 105, 0.2);
+  --border-medium: rgba(5, 150, 105, 0.3);
+  --status-active: #4ade80;
+  --input-bg: rgba(0,0,0,0.3);
+  --input-border: rgba(5, 150, 105, 0.3);
+  --input-focus-border: rgba(212, 168, 67, 0.4);
+  --overlay-bg: rgba(0,0,0,0.6);
+  --header-bg: rgba(0,0,0,0.2);
+  --header-border: rgba(5, 150, 105, 0.2);
+  --vote-bar-from: #b8922e;
+  --vote-bar-to: #d4a843;
+  --voted-card-bg: #1a3a5c;
+  --voted-card-border: rgba(96, 165, 250, 0.5);
+  --unvoted-bg: rgba(0,0,0,0.2);
+  --unvoted-border: rgba(5, 150, 105, 0.2);
+  --btn-primary-from: #b8922e;
+  --btn-primary-to: #e0bd6a;
+  --btn-primary-text: #0a3d25;
+  --btn-secondary-bg: rgba(5, 150, 105, 0.25);
+  --btn-secondary-text: #86efac;
+  --btn-secondary-border: rgba(5, 150, 105, 0.3);
+  --btn-danger-text: #fcd34d;
+  --btn-danger-border: rgba(217, 119, 6, 0.3);
+  --red-suit: #f87171;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+.felt-bg {
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--bg-glow1) 0%, transparent 70%),
+    radial-gradient(circle at 20% 80%, var(--bg-glow2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 60%, var(--bg-glow3) 0%, transparent 50%),
+    var(--bg-dark);
+  min-height: 100vh;
+}
+
+.card-inner {
+  position: relative; width: 100%; height: 100%;
+  transition: transform 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+.card-inner.flipped { transform: rotateY(180deg); }
+.card-front, .card-back {
+  position: absolute; inset: 0;
+  backface-visibility: hidden; border-radius: 0.75rem;
+}
+.card-back { transform: rotateY(180deg); }
+
+.vote-facedown { animation: bounceIn 0.5s ease-out; }
+
+@keyframes slideUp { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes pulseSoft { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes bounceIn { 0% { transform: scale(0.8); opacity: 0; } 60% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+.animate-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+.animate-bounce-in { animation: bounceIn 0.5s ease-out; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 3px; }
+
+/* ── Matrix Rain ──────────────────────────── */
+.theme-matrix .felt-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 65, 0.03) 2px,
+      rgba(0, 255, 65, 0.03) 4px
+    );
+  animation: matrixScan 8s linear infinite;
+}
+
+.theme-matrix .felt-bg::after {
+  content: "ア イ ウ エ オ カ キ ク ケ コ サ シ ス 0 1 ネ ノ ハ ヒ フ ヘ ホ マ ミ ム メ モ ヤ ユ ヨ ラ リ ル レ ロ ワ ヲ ン";
+  position: fixed;
+  top: -50%;
+  left: 0;
+  right: 0;
+  height: 200%;
+  z-index: 0;
+  pointer-events: none;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 1.8em;
+  word-spacing: 4em;
+  color: rgba(0, 255, 65, 0.06);
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.1);
+  overflow: hidden;
+  word-break: break-all;
+  animation: matrixRain 20s linear infinite;
+}
+
+@keyframes matrixRain {
+  0% { transform: translateY(-30%); }
+  100% { transform: translateY(0%); }
+}
+
+@keyframes matrixScan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100vh; }
+}
+
+.theme-matrix * { text-shadow: 0 0 6px rgba(0, 255, 65, 0.3); }
+.theme-matrix input, .theme-matrix textarea { text-shadow: none; }

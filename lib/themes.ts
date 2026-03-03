@@ -1,0 +1,402 @@
+export interface Theme {
+  name: string;
+  emoji: string;
+  bodyClass?: string; // Optional extra class applied to <html> for theme-specific CSS effects
+  // Core surfaces
+  bg: string;
+  bgLight: string;
+  bgDark: string;
+  bgGlow1: string;
+  bgGlow2: string;
+  bgGlow3: string;
+  // Accent
+  accent: string;
+  accentLight: string;
+  accentDark: string;
+  // Text
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  textOnAccent: string;
+  // Cards
+  cardFace: string;
+  cardBack: string;
+  cardText: string;
+  // Borders
+  borderSubtle: string;
+  borderMedium: string;
+  // Status
+  statusActive: string;
+  statusIdle: string;
+  statusOffline: string;
+  // UI
+  inputBg: string;
+  inputBorder: string;
+  inputFocusBorder: string;
+  overlayBg: string;
+  headerBg: string;
+  headerBorder: string;
+  // Voting
+  voteBarFrom: string;
+  voteBarTo: string;
+  votedCardBg: string;
+  votedCardBorder: string;
+  unvotedBg: string;
+  unvotedBorder: string;
+  // Buttons
+  btnPrimaryFrom: string;
+  btnPrimaryTo: string;
+  btnPrimaryText: string;
+  btnSecondaryBg: string;
+  btnSecondaryText: string;
+  btnSecondaryBorder: string;
+  btnDangerText: string;
+  btnDangerBorder: string;
+  // Badges
+  badgePendingText: string;
+  badgePendingBg: string;
+  badgeVotingText: string;
+  badgeVotingBg: string;
+  badgeRevealedText: string;
+  badgeRevealedBg: string;
+  badgeCompleteText: string;
+  badgeCompleteBg: string;
+  // Red suits
+  redSuit: string;
+}
+
+const themes: Record<string, Theme> = {
+  felt: {
+    name: "Classic Felt",
+    emoji: "♣",
+    bg: "#0d4a2e",
+    bgLight: "#11593a",
+    bgDark: "#0a3d25",
+    bgGlow1: "rgba(17, 89, 58, 0.6)",
+    bgGlow2: "rgba(10, 61, 37, 0.4)",
+    bgGlow3: "rgba(13, 74, 46, 0.3)",
+    accent: "#d4a843",
+    accentLight: "#e0bd6a",
+    accentDark: "#b8922e",
+    textPrimary: "#f5f0e8",
+    textSecondary: "rgba(134, 239, 172, 0.5)",
+    textMuted: "#059669",
+    textOnAccent: "#0a3d25",
+    cardFace: "#f5f0e8",
+    cardBack: "#1a3a5c",
+    cardText: "#0a3d25",
+    borderSubtle: "rgba(5, 150, 105, 0.2)",
+    borderMedium: "rgba(5, 150, 105, 0.3)",
+    statusActive: "#4ade80",
+    statusIdle: "#fbbf24",
+    statusOffline: "#6b7280",
+    inputBg: "rgba(0,0,0,0.3)",
+    inputBorder: "rgba(5, 150, 105, 0.3)",
+    inputFocusBorder: "rgba(212, 168, 67, 0.4)",
+    overlayBg: "rgba(0,0,0,0.6)",
+    headerBg: "rgba(0,0,0,0.2)",
+    headerBorder: "rgba(5, 150, 105, 0.2)",
+    voteBarFrom: "#b8922e",
+    voteBarTo: "#d4a843",
+    votedCardBg: "#1a3a5c",
+    votedCardBorder: "rgba(96, 165, 250, 0.5)",
+    unvotedBg: "rgba(0,0,0,0.2)",
+    unvotedBorder: "rgba(5, 150, 105, 0.2)",
+    btnPrimaryFrom: "#b8922e",
+    btnPrimaryTo: "#e0bd6a",
+    btnPrimaryText: "#0a3d25",
+    btnSecondaryBg: "rgba(5, 150, 105, 0.25)",
+    btnSecondaryText: "#86efac",
+    btnSecondaryBorder: "rgba(5, 150, 105, 0.3)",
+    btnDangerText: "#fcd34d",
+    btnDangerBorder: "rgba(217, 119, 6, 0.3)",
+    badgePendingText: "#9ca3af",
+    badgePendingBg: "rgba(31, 41, 55, 0.5)",
+    badgeVotingText: "#fcd34d",
+    badgeVotingBg: "rgba(120, 53, 15, 0.3)",
+    badgeRevealedText: "#93c5fd",
+    badgeRevealedBg: "rgba(30, 58, 138, 0.3)",
+    badgeCompleteText: "#86efac",
+    badgeCompleteBg: "rgba(6, 78, 59, 0.3)",
+    redSuit: "#f87171",
+  },
+
+  midnight: {
+    name: "Midnight",
+    emoji: "🌙",
+    bg: "#0f172a",
+    bgLight: "#1e293b",
+    bgDark: "#020617",
+    bgGlow1: "rgba(30, 41, 59, 0.8)",
+    bgGlow2: "rgba(15, 23, 42, 0.5)",
+    bgGlow3: "rgba(51, 65, 85, 0.3)",
+    accent: "#818cf8",
+    accentLight: "#a5b4fc",
+    accentDark: "#6366f1",
+    textPrimary: "#f1f5f9",
+    textSecondary: "rgba(148, 163, 184, 0.7)",
+    textMuted: "#475569",
+    textOnAccent: "#020617",
+    cardFace: "#f1f5f9",
+    cardBack: "#312e81",
+    cardText: "#1e1b4b",
+    borderSubtle: "rgba(71, 85, 105, 0.25)",
+    borderMedium: "rgba(71, 85, 105, 0.4)",
+    statusActive: "#34d399",
+    statusIdle: "#fbbf24",
+    statusOffline: "#64748b",
+    inputBg: "rgba(2, 6, 23, 0.5)",
+    inputBorder: "rgba(71, 85, 105, 0.4)",
+    inputFocusBorder: "rgba(129, 140, 248, 0.5)",
+    overlayBg: "rgba(2, 6, 23, 0.7)",
+    headerBg: "rgba(2, 6, 23, 0.4)",
+    headerBorder: "rgba(71, 85, 105, 0.2)",
+    voteBarFrom: "#6366f1",
+    voteBarTo: "#818cf8",
+    votedCardBg: "#312e81",
+    votedCardBorder: "rgba(129, 140, 248, 0.5)",
+    unvotedBg: "rgba(2, 6, 23, 0.4)",
+    unvotedBorder: "rgba(71, 85, 105, 0.3)",
+    btnPrimaryFrom: "#6366f1",
+    btnPrimaryTo: "#a5b4fc",
+    btnPrimaryText: "#020617",
+    btnSecondaryBg: "rgba(71, 85, 105, 0.3)",
+    btnSecondaryText: "#94a3b8",
+    btnSecondaryBorder: "rgba(71, 85, 105, 0.4)",
+    btnDangerText: "#fbbf24",
+    btnDangerBorder: "rgba(217, 119, 6, 0.3)",
+    badgePendingText: "#94a3b8",
+    badgePendingBg: "rgba(30, 41, 59, 0.5)",
+    badgeVotingText: "#fbbf24",
+    badgeVotingBg: "rgba(120, 53, 15, 0.3)",
+    badgeRevealedText: "#a5b4fc",
+    badgeRevealedBg: "rgba(49, 46, 129, 0.4)",
+    badgeCompleteText: "#6ee7b7",
+    badgeCompleteBg: "rgba(6, 78, 59, 0.3)",
+    redSuit: "#fb7185",
+  },
+
+  noir: {
+    name: "Noir",
+    emoji: "♠",
+    bg: "#171717",
+    bgLight: "#262626",
+    bgDark: "#0a0a0a",
+    bgGlow1: "rgba(38, 38, 38, 0.7)",
+    bgGlow2: "rgba(23, 23, 23, 0.5)",
+    bgGlow3: "rgba(38, 38, 38, 0.3)",
+    accent: "#ef4444",
+    accentLight: "#f87171",
+    accentDark: "#dc2626",
+    textPrimary: "#fafafa",
+    textSecondary: "rgba(163, 163, 163, 0.7)",
+    textMuted: "#525252",
+    textOnAccent: "#fafafa",
+    cardFace: "#fafaf9",
+    cardBack: "#1c1917",
+    cardText: "#171717",
+    borderSubtle: "rgba(82, 82, 82, 0.25)",
+    borderMedium: "rgba(82, 82, 82, 0.4)",
+    statusActive: "#4ade80",
+    statusIdle: "#fbbf24",
+    statusOffline: "#525252",
+    inputBg: "rgba(10, 10, 10, 0.6)",
+    inputBorder: "rgba(82, 82, 82, 0.4)",
+    inputFocusBorder: "rgba(239, 68, 68, 0.5)",
+    overlayBg: "rgba(10, 10, 10, 0.8)",
+    headerBg: "rgba(10, 10, 10, 0.5)",
+    headerBorder: "rgba(82, 82, 82, 0.2)",
+    voteBarFrom: "#dc2626",
+    voteBarTo: "#ef4444",
+    votedCardBg: "#1c1917",
+    votedCardBorder: "rgba(239, 68, 68, 0.4)",
+    unvotedBg: "rgba(10, 10, 10, 0.4)",
+    unvotedBorder: "rgba(82, 82, 82, 0.3)",
+    btnPrimaryFrom: "#dc2626",
+    btnPrimaryTo: "#f87171",
+    btnPrimaryText: "#fafafa",
+    btnSecondaryBg: "rgba(82, 82, 82, 0.2)",
+    btnSecondaryText: "#a3a3a3",
+    btnSecondaryBorder: "rgba(82, 82, 82, 0.4)",
+    btnDangerText: "#fbbf24",
+    btnDangerBorder: "rgba(217, 119, 6, 0.3)",
+    badgePendingText: "#a3a3a3",
+    badgePendingBg: "rgba(38, 38, 38, 0.5)",
+    badgeVotingText: "#fbbf24",
+    badgeVotingBg: "rgba(120, 53, 15, 0.3)",
+    badgeRevealedText: "#f87171",
+    badgeRevealedBg: "rgba(127, 29, 29, 0.3)",
+    badgeCompleteText: "#86efac",
+    badgeCompleteBg: "rgba(6, 78, 59, 0.3)",
+    redSuit: "#ef4444",
+  },
+
+  desert: {
+    name: "Desert",
+    emoji: "🌵",
+    bg: "#292018",
+    bgLight: "#3d2e20",
+    bgDark: "#1a1410",
+    bgGlow1: "rgba(61, 46, 32, 0.7)",
+    bgGlow2: "rgba(41, 32, 24, 0.5)",
+    bgGlow3: "rgba(61, 46, 32, 0.3)",
+    accent: "#e09f3e",
+    accentLight: "#f0be68",
+    accentDark: "#c4882a",
+    textPrimary: "#faf0e6",
+    textSecondary: "rgba(215, 186, 155, 0.7)",
+    textMuted: "#6b5744",
+    textOnAccent: "#1a1410",
+    cardFace: "#faf3eb",
+    cardBack: "#5c3a1e",
+    cardText: "#2c1a0e",
+    borderSubtle: "rgba(107, 87, 68, 0.25)",
+    borderMedium: "rgba(107, 87, 68, 0.4)",
+    statusActive: "#4ade80",
+    statusIdle: "#fbbf24",
+    statusOffline: "#6b5744",
+    inputBg: "rgba(26, 20, 16, 0.5)",
+    inputBorder: "rgba(107, 87, 68, 0.4)",
+    inputFocusBorder: "rgba(224, 159, 62, 0.5)",
+    overlayBg: "rgba(26, 20, 16, 0.7)",
+    headerBg: "rgba(26, 20, 16, 0.4)",
+    headerBorder: "rgba(107, 87, 68, 0.2)",
+    voteBarFrom: "#c4882a",
+    voteBarTo: "#e09f3e",
+    votedCardBg: "#5c3a1e",
+    votedCardBorder: "rgba(224, 159, 62, 0.5)",
+    unvotedBg: "rgba(26, 20, 16, 0.4)",
+    unvotedBorder: "rgba(107, 87, 68, 0.3)",
+    btnPrimaryFrom: "#c4882a",
+    btnPrimaryTo: "#f0be68",
+    btnPrimaryText: "#1a1410",
+    btnSecondaryBg: "rgba(107, 87, 68, 0.25)",
+    btnSecondaryText: "#d7ba9b",
+    btnSecondaryBorder: "rgba(107, 87, 68, 0.4)",
+    btnDangerText: "#fbbf24",
+    btnDangerBorder: "rgba(217, 119, 6, 0.3)",
+    badgePendingText: "#a3917d",
+    badgePendingBg: "rgba(61, 46, 32, 0.5)",
+    badgeVotingText: "#fbbf24",
+    badgeVotingBg: "rgba(120, 53, 15, 0.3)",
+    badgeRevealedText: "#93c5fd",
+    badgeRevealedBg: "rgba(30, 58, 138, 0.3)",
+    badgeCompleteText: "#86efac",
+    badgeCompleteBg: "rgba(6, 78, 59, 0.3)",
+    redSuit: "#e57373",
+  },
+
+  arctic: {
+    name: "Arctic",
+    emoji: "❄️",
+    bg: "#e8eef4",
+    bgLight: "#f0f4f8",
+    bgDark: "#dce4ec",
+    bgGlow1: "rgba(240, 244, 248, 0.8)",
+    bgGlow2: "rgba(220, 228, 236, 0.5)",
+    bgGlow3: "rgba(200, 212, 224, 0.3)",
+    accent: "#2563eb",
+    accentLight: "#3b82f6",
+    accentDark: "#1d4ed8",
+    textPrimary: "#0f172a",
+    textSecondary: "rgba(51, 65, 85, 0.7)",
+    textMuted: "#94a3b8",
+    textOnAccent: "#f8fafc",
+    cardFace: "#ffffff",
+    cardBack: "#1e3a5f",
+    cardText: "#0f172a",
+    borderSubtle: "rgba(148, 163, 184, 0.25)",
+    borderMedium: "rgba(148, 163, 184, 0.45)",
+    statusActive: "#22c55e",
+    statusIdle: "#f59e0b",
+    statusOffline: "#94a3b8",
+    inputBg: "rgba(255, 255, 255, 0.7)",
+    inputBorder: "rgba(148, 163, 184, 0.4)",
+    inputFocusBorder: "rgba(37, 99, 235, 0.5)",
+    overlayBg: "rgba(15, 23, 42, 0.4)",
+    headerBg: "rgba(255, 255, 255, 0.6)",
+    headerBorder: "rgba(148, 163, 184, 0.25)",
+    voteBarFrom: "#1d4ed8",
+    voteBarTo: "#3b82f6",
+    votedCardBg: "#1e3a5f",
+    votedCardBorder: "rgba(37, 99, 235, 0.5)",
+    unvotedBg: "rgba(255, 255, 255, 0.4)",
+    unvotedBorder: "rgba(148, 163, 184, 0.3)",
+    btnPrimaryFrom: "#1d4ed8",
+    btnPrimaryTo: "#3b82f6",
+    btnPrimaryText: "#f8fafc",
+    btnSecondaryBg: "rgba(148, 163, 184, 0.2)",
+    btnSecondaryText: "#334155",
+    btnSecondaryBorder: "rgba(148, 163, 184, 0.4)",
+    btnDangerText: "#dc2626",
+    btnDangerBorder: "rgba(239, 68, 68, 0.3)",
+    badgePendingText: "#64748b",
+    badgePendingBg: "rgba(148, 163, 184, 0.2)",
+    badgeVotingText: "#d97706",
+    badgeVotingBg: "rgba(251, 191, 36, 0.15)",
+    badgeRevealedText: "#2563eb",
+    badgeRevealedBg: "rgba(37, 99, 235, 0.1)",
+    badgeCompleteText: "#16a34a",
+    badgeCompleteBg: "rgba(34, 197, 94, 0.1)",
+    redSuit: "#dc2626",
+  },
+
+  matrix: {
+    name: "Matrix",
+    emoji: "🐇",
+    bodyClass: "theme-matrix",
+    bg: "#030d03",
+    bgLight: "#071a07",
+    bgDark: "#010801",
+    bgGlow1: "rgba(0, 40, 0, 0.6)",
+    bgGlow2: "rgba(0, 25, 0, 0.5)",
+    bgGlow3: "rgba(0, 50, 0, 0.2)",
+    accent: "#00ff41",
+    accentLight: "#50ff78",
+    accentDark: "#00cc33",
+    textPrimary: "#00ff41",
+    textSecondary: "rgba(0, 255, 65, 0.5)",
+    textMuted: "#0a4f0a",
+    textOnAccent: "#010801",
+    cardFace: "#0a1f0a",
+    cardBack: "#020e02",
+    cardText: "#00ff41",
+    borderSubtle: "rgba(0, 255, 65, 0.1)",
+    borderMedium: "rgba(0, 255, 65, 0.2)",
+    statusActive: "#00ff41",
+    statusIdle: "#ffff00",
+    statusOffline: "#0a4f0a",
+    inputBg: "rgba(0, 10, 0, 0.7)",
+    inputBorder: "rgba(0, 255, 65, 0.15)",
+    inputFocusBorder: "rgba(0, 255, 65, 0.5)",
+    overlayBg: "rgba(0, 4, 0, 0.85)",
+    headerBg: "rgba(0, 6, 0, 0.6)",
+    headerBorder: "rgba(0, 255, 65, 0.1)",
+    voteBarFrom: "#00882a",
+    voteBarTo: "#00ff41",
+    votedCardBg: "#020e02",
+    votedCardBorder: "rgba(0, 255, 65, 0.3)",
+    unvotedBg: "rgba(0, 8, 0, 0.5)",
+    unvotedBorder: "rgba(0, 255, 65, 0.1)",
+    btnPrimaryFrom: "#00aa30",
+    btnPrimaryTo: "#00ff41",
+    btnPrimaryText: "#010801",
+    btnSecondaryBg: "rgba(0, 255, 65, 0.08)",
+    btnSecondaryText: "#00cc33",
+    btnSecondaryBorder: "rgba(0, 255, 65, 0.2)",
+    btnDangerText: "#ff3333",
+    btnDangerBorder: "rgba(255, 51, 51, 0.3)",
+    badgePendingText: "#0a7a0a",
+    badgePendingBg: "rgba(0, 40, 0, 0.4)",
+    badgeVotingText: "#00ff41",
+    badgeVotingBg: "rgba(0, 60, 0, 0.3)",
+    badgeRevealedText: "#50ff78",
+    badgeRevealedBg: "rgba(0, 80, 0, 0.2)",
+    badgeCompleteText: "#00ff41",
+    badgeCompleteBg: "rgba(0, 60, 0, 0.3)",
+    redSuit: "#ff3333",
+  },
+};
+
+export const themeKeys = Object.keys(themes);
+export default themes;
