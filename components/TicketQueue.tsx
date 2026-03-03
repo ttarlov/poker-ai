@@ -6,7 +6,15 @@ interface Ticket {
   final_estimate: string | null;
 }
 
-export default function TicketQueue({ tickets, currentTicketId }: { tickets: Ticket[]; currentTicketId: string | null }) {
+export default function TicketQueue({
+  tickets,
+  currentTicketId,
+  onTicketClick,
+}: {
+  tickets: Ticket[];
+  currentTicketId: string | null;
+  onTicketClick?: (ticketId: string) => void;
+}) {
   if (tickets.length === 0) return null;
 
   return (
@@ -14,15 +22,31 @@ export default function TicketQueue({ tickets, currentTicketId }: { tickets: Tic
       {tickets.map((ticket) => {
         const isCurrent = ticket.id === currentTicketId;
         const isVoting = ticket.status === "voting";
+        const isClickable = !!onTicketClick && ticket.status !== "complete";
         return (
-          <div key={ticket.id}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg shrink-0 text-sm transition-all duration-200"
+          <button key={ticket.id}
+            onClick={() => isClickable && onTicketClick(ticket.id)}
+            disabled={!isClickable}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg shrink-0 text-sm transition-all duration-200 disabled:cursor-default"
             style={{
               background: isCurrent ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "var(--input-bg)",
               border: isCurrent ? "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" : "1px solid var(--border-subtle)",
               color: isCurrent ? "var(--accent)" : "var(--text-secondary)",
+              cursor: isClickable ? "pointer" : "default",
+            }}
+            onMouseEnter={e => {
+              if (isClickable && !isCurrent) {
+                (e.currentTarget as HTMLElement).style.borderColor = "color-mix(in srgb, var(--accent) 40%, transparent)";
+                (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+              }
+            }}
+            onMouseLeave={e => {
+              if (isClickable && !isCurrent) {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
+                (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+              }
             }}>
-            <div className={`w-2 h-2 rounded-full shrink-0 ${isVoting ? "animate-pulse" : ""}`}
+            <div className={"w-2 h-2 rounded-full shrink-0 " + (isVoting ? "animate-pulse" : "")}
                  style={{
                    background: ticket.status === "complete" ? "var(--status-active)"
                      : ticket.status === "voting" ? "var(--status-idle)"
@@ -36,7 +60,7 @@ export default function TicketQueue({ tickets, currentTicketId }: { tickets: Tic
                 {ticket.final_estimate}
               </span>
             )}
-          </div>
+          </button>
         );
       })}
     </div>

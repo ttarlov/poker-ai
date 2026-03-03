@@ -1,9 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
 const FIBONACCI = ["1", "2", "3", "5", "8", "13", "21"];
+
+function closestFibonacci(avg: number): string {
+  const fibs = FIBONACCI.map(Number);
+  let closest = fibs[0];
+  let minDiff = Math.abs(avg - closest);
+  for (const f of fibs) {
+    const diff = Math.abs(avg - f);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = f;
+    }
+  }
+  return String(closest);
+}
 
 export default function VotingStage() {
   const { gameState, myParticipantId, startVoting, revealVotes, lockEstimate, revote } = useStore();
@@ -33,6 +47,18 @@ export default function VotingStage() {
     return { votes, stats };
   }, [currentTicket, ticketVotes, gameState.participants]);
 
+  // Auto-select closest fibonacci when votes are revealed
+  useEffect(() => {
+    if (revealedData && revealedData.stats) {
+      setSelectedEstimate(closestFibonacci(revealedData.stats.average));
+    }
+  }, [revealedData]);
+
+  // Reset selection when ticket changes
+  useEffect(() => {
+    setSelectedEstimate(null);
+  }, [gameState.currentTicketId]);
+
   // No current ticket — show first pending
   if (!currentTicket && gameState.tickets.length > 0) {
     const firstPending = gameState.tickets.find(t => t.status === "pending");
@@ -42,7 +68,7 @@ export default function VotingStage() {
         <TicketDisplay ticket={firstPending} />
         <button onClick={() => startVoting(firstPending.id)}
           className="mt-8 px-8 py-3 font-bold text-lg rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all"
-          style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
+          style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
           Start Voting
         </button>
       </div>
@@ -65,8 +91,7 @@ export default function VotingStage() {
               const hasVoted = votedPids.has(p.participant_id);
               return (
                 <div key={p.id} className="flex flex-col items-center gap-2">
-                  <div className={`w-16 h-24 rounded-xl border-2 flex items-center justify-center
-                                  transition-all duration-300 ${!hasVoted ? "border-dashed animate-pulse-soft" : "shadow-lg vote-facedown"}`}
+                  <div className={"w-16 h-24 rounded-xl border-2 flex items-center justify-center transition-all duration-300 " + (!hasVoted ? "border-dashed animate-pulse-soft" : "shadow-lg vote-facedown")}
                     style={{
                       background: hasVoted ? "var(--voted-card-bg)" : "var(--unvoted-bg)",
                       borderColor: hasVoted ? "var(--voted-card-border)" : "var(--unvoted-border)",
@@ -105,7 +130,7 @@ export default function VotingStage() {
                   style={{
                     background: "var(--card-face)",
                     borderColor: "color-mix(in srgb, var(--accent) 40%, transparent)",
-                    animationDelay: `${i * 80}ms`,
+                    animationDelay: i * 80 + "ms",
                   }}>
                   <span className="font-display text-2xl font-bold" style={{ color: "var(--card-text)" }}>{v.value}</span>
                 </div>
@@ -185,7 +210,7 @@ export default function VotingStage() {
             <div className="mt-6">
               <button onClick={() => startVoting(nextPendingTicket.id)}
                 className="px-6 py-3 font-bold rounded-xl hover:shadow-lg transition-all"
-                style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
+                style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
                 Next: {nextPendingTicket.title}
               </button>
             </div>
@@ -211,7 +236,7 @@ function TicketDisplay({ ticket }: { ticket: any }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs px-2 py-0.5 rounded"
-                  style={{ background: b.bg, color: b.text, border: `1px solid color-mix(in srgb, ${b.text} 30%, transparent)` }}>
+                  style={{ background: b.bg, color: b.text, border: "1px solid color-mix(in srgb, " + b.text + " 30%, transparent)" }}>
               {b.label}
             </span>
             {ticket.final_estimate && (
@@ -249,9 +274,9 @@ function VoteDistribution({ votes }: { votes: { value: string; displayName: stri
         .map(([value, count]) => (
           <div key={value} className="flex flex-col items-center gap-1">
             <div className="w-12 rounded-t-lg transition-all duration-500"
-                 style={{ height: `${(count / max) * 60 + 16}px`, background: `linear-gradient(to top, var(--vote-bar-from), var(--vote-bar-to))` }} />
+                 style={{ height: (count / max) * 60 + 16 + "px", background: "linear-gradient(to top, var(--vote-bar-from), var(--vote-bar-to))" }} />
             <span className="font-mono text-sm" style={{ color: "var(--accent)" }}>{value}</span>
-            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>×{count}</span>
+            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>x{count}</span>
           </div>
         ))}
     </div>

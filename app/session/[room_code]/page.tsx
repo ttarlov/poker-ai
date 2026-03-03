@@ -16,7 +16,7 @@ export default function SessionRoom() {
   const router = useRouter();
   const params = useParams();
   const roomCode = (params.room_code as string)?.toUpperCase();
-  const { gameState, joinRoom, roomError, loading, ready } = useStore();
+  const { gameState, joinRoom, startVoting, roomError, loading, ready } = useStore();
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -241,7 +241,11 @@ export default function SessionRoom() {
         ) : (
           <>
             <div className="flex items-start justify-between gap-4 mb-6">
-              <TicketQueue tickets={gameState.tickets} currentTicketId={gameState.currentTicketId} />
+              <TicketQueue
+                tickets={gameState.tickets}
+                currentTicketId={gameState.currentTicketId}
+                onTicketClick={startVoting}
+              />
               <div className="flex gap-2 shrink-0">
                 {allComplete && (
                   <button onClick={() => setShowSummary(true)}
