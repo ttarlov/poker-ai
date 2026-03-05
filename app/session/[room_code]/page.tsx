@@ -9,6 +9,7 @@ import TicketForm from "@/components/TicketForm";
 import VotingStage from "@/components/VotingStage";
 import VotingCards from "@/components/VotingCards";
 import SessionSummary from "@/components/SessionSummary";
+import PointsSummary from "@/components/PointsSummary";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import UserMenu from "@/components/UserMenu";
 
@@ -82,7 +83,6 @@ export default function SessionRoom() {
 
   const displayName = (() => {
     if (typeof document === "undefined") return "";
-    // Check per-tab session storage FIRST
     try {
       const sd = sessionStorage.getItem("pokerai_session_" + roomCode);
       if (sd) {
@@ -90,7 +90,6 @@ export default function SessionRoom() {
         if (parsed.displayName) return parsed.displayName;
       }
     } catch (e) {}
-    // Fall back to cookie
     const cookies = document.cookie.split("; ");
     const nameCookie = cookies.find(function(c) { return c.startsWith("pokerai_name="); });
     if (nameCookie) return decodeURIComponent(nameCookie.split("=")[1]);
@@ -240,7 +239,7 @@ export default function SessionRoom() {
           <SessionSummary tickets={gameState.tickets} onClose={() => setShowSummary(false)} />
         ) : (
           <>
-            <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
               <TicketQueue
                 tickets={gameState.tickets}
                 currentTicketId={gameState.currentTicketId}
@@ -260,6 +259,9 @@ export default function SessionRoom() {
                   + Add Ticket
                 </button>
               </div>
+            </div>
+            <div className="mb-6">
+              <PointsSummary />
             </div>
             {showTicketForm && <TicketForm onClose={() => setShowTicketForm(false)} />}
             <VotingStage />
