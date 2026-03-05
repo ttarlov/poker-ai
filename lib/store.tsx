@@ -22,6 +22,7 @@ interface Ticket {
   status: "pending" | "voting" | "revealed" | "complete";
   final_estimate: string | null;
   display_order: number;
+  created_by: string | null;
 }
 
 interface Vote {
@@ -299,13 +300,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // ── Add Ticket ────────────────────────────────────────────────────
   const addTicket = useCallback(async (title: string, description: string) => {
     const sid = gameState.sessionId;
-    if (!sid) return;
+    const pid = pidRef.current;
+    if (!sid || !pid) return;
     const order = gameState.tickets.length;
     await supabase.from("tickets").insert({
       session_id: sid,
       title,
       description,
       display_order: order,
+      created_by: pid,
     });
   }, [gameState.sessionId, gameState.tickets.length]);
 
