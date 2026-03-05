@@ -3,20 +3,20 @@
 import { useState, useMemo, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
-const FIBONACCI = ["1", "2", "3", "5", "8", "13", "21"];
+const POINT_SCALE = ["0.5", "1", "2", "3", "4", "5"];
 
-function closestFibonacci(avg: number): string {
-  const fibs = FIBONACCI.map(Number);
-  let closest = fibs[0];
+function closestPoint(avg: number): string {
+  const points = POINT_SCALE.map(Number);
+  let closest = points[0];
   let minDiff = Math.abs(avg - closest);
-  for (const f of fibs) {
-    const diff = Math.abs(avg - f);
+  for (const p of points) {
+    const diff = Math.abs(avg - p);
     if (diff < minDiff) {
       minDiff = diff;
-      closest = f;
+      closest = p;
     }
   }
-  return String(closest);
+  return closest === 0.5 ? "0.5" : String(closest);
 }
 
 export default function VotingStage() {
@@ -47,10 +47,10 @@ export default function VotingStage() {
     return { votes, stats };
   }, [currentTicket, ticketVotes, gameState.participants]);
 
-  // Auto-select closest fibonacci when votes are revealed
+  // Auto-select closest point when votes are revealed
   useEffect(() => {
     if (revealedData && revealedData.stats) {
-      setSelectedEstimate(closestFibonacci(revealedData.stats.average));
+      setSelectedEstimate(closestPoint(revealedData.stats.average));
     }
   }, [revealedData]);
 
@@ -161,7 +161,7 @@ export default function VotingStage() {
           <div className="flex flex-col items-center gap-4 mt-6">
             <div className="flex flex-wrap items-center justify-center gap-2">
               <span className="text-sm mr-2" style={{ color: "var(--text-secondary)" }}>Lock estimate:</span>
-              {FIBONACCI.map(val => (
+              {POINT_SCALE.map(val => (
                 <button key={val} onClick={() => setSelectedEstimate(val)}
                   className="w-10 h-10 rounded-lg font-mono text-sm font-bold transition-all"
                   style={{
