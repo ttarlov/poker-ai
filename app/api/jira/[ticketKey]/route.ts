@@ -16,7 +16,6 @@ export async function GET(
     );
   }
 
-  // Validate ticket key format (e.g. ENG-1234)
   if (!/^[A-Z][A-Z0-9]+-\d+$/.test(ticketKey)) {
     return NextResponse.json(
       { error: "Invalid ticket key format. Expected something like ENG-1234" },
@@ -38,30 +37,17 @@ export async function GET(
 
     if (!response.ok) {
       if (response.status === 404) {
-        return NextResponse.json(
-          { error: `Ticket ${ticketKey} not found` },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: `Ticket ${ticketKey} not found` }, { status: 404 });
       }
       if (response.status === 401 || response.status === 403) {
-        return NextResponse.json(
-          { error: "Jira authentication failed — check credentials" },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "Jira authentication failed — check credentials" }, { status: 401 });
       }
-      return NextResponse.json(
-        { error: `Jira returned status ${response.status}` },
-        { status: response.status }
-      );
+      return NextResponse.json({ error: `Jira returned status ${response.status}` }, { status: response.status });
     }
 
     const data = await response.json();
     const fields = data.fields;
-
-    // Extract plain text from Atlassian Document Format (ADF) description
     const description = extractTextFromADF(fields.description);
-
-    // Search comments for [POKER-SUMMARY] tag
     const pokerSummary = extractPokerSummary(fields.comment?.comments || []);
 
     return NextResponse.json({
@@ -78,32 +64,23 @@ export async function GET(
     });
   } catch (err) {
     console.error("Jira fetch error:", err);
-    return NextResponse.json(
-      { error: "Failed to connect to Jira" },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: "Failed to connect to Jira" }, { status: 502 });
   }
 }
 
-// Search comments for [POKER-SUMMARY] tag and extract the summary text
 function extractPokerSummary(comments: any[]): string | null {
-  // Search newest comments first — most recent summary wins
   const reversed = [...comments].reverse();
-
   for (const comment of reversed) {
     const text = extractTextFromADF(comment.body);
     const tagIndex = text.indexOf("[POKER-SUMMARY]");
     if (tagIndex !== -1) {
-      // Extract everything after the tag
       const summary = text.substring(tagIndex + "[POKER-SUMMARY]".length).trim();
       if (summary) return summary;
     }
   }
-
   return null;
 }
 
-// Recursively extract plain text from Atlassian Document Format
 function extractTextFromADF(node: any): string {
   if (!node) return "";
   if (typeof node === "string") return node;
@@ -112,7 +89,6 @@ function extractTextFromADF(node: any): string {
   if (node.content && Array.isArray(node.content)) {
     const parts = node.content.map((child: any) => {
       const text = extractTextFromADF(child);
-      // Add newlines after block-level elements
       if (
         child.type === "paragraph" ||
         child.type === "heading" ||
