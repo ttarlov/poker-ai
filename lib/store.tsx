@@ -23,6 +23,8 @@ interface Ticket {
   final_estimate: string | null;
   display_order: number;
   created_by: string | null;
+  jira_key: string | null;
+  external_url: string | null;
 }
 
 interface Vote {
@@ -42,6 +44,13 @@ interface GameState {
   votes: Record<string, Vote[]>;
 }
 
+interface AddTicketOptions {
+  title: string;
+  description: string;
+  jiraKey?: string;
+  externalUrl?: string;
+}
+
 interface StoreContextType {
   gameState: GameState;
   myParticipantId: string;
@@ -52,7 +61,7 @@ interface StoreContextType {
   checkRoom: (code: string) => Promise<{ exists: boolean; name?: string; code?: string }>;
   joinRoom: (roomCode: string, displayName: string) => Promise<void>;
   leaveRoom: () => void;
-  addTicket: (title: string, description: string) => Promise<void>;
+  addTicket: (options: AddTicketOptions) => Promise<void>;
   startVoting: (ticketId: string) => Promise<void>;
   castVote: (ticketId: string, value: string) => Promise<void>;
   revealVotes: (ticketId: string) => Promise<void>;
@@ -83,13 +92,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     votes: {},
   });
 
-  // Stable participant ID — generated once on mount, stored in ref
   const pidRef = useRef<string>("");
   const [myParticipantId, setMyParticipantId] = useState("");
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Initialize participant ID on client mount
   useEffect(() => {
     const key = "pokerai_pid";
     let pid = sessionStorage.getItem(key);
@@ -102,7 +109,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setReady(true);
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
@@ -110,7 +116,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // ── Load full room state from DB ──────────────────────────────────
   const loadRoomState = useCallback(async (sessionId: string) => {
     const [participantsRes, ticketsRes, votesRes] = await Promise.all([
       supabase.from("session_participants").select("*").eq("session_id", sessionId).order("joined_at"),
@@ -136,7 +141,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  // ── Subscribe to Realtime changes ─────────────────────────────────
   const subscribeToRoom = useCallback((sessionId: string) => {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
 
@@ -191,7 +195,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     channelRef.current = channel;
   }, []);
 
-  // ── Heartbeat ─────────────────────────────────────────────────────
   const startHeartbeat = useCallback((sessionId: string) => {
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     heartbeatRef.current = setInterval(() => {
@@ -205,7 +208,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, 30000);
   }, []);
 
-  // ── Create Room ───────────────────────────────────────────────────
   const createRoom = useCallback(async (name: string) => {
     const { data: codeData } = await supabase.rpc("generate_room_code");
     const roomCode = codeData as string;
@@ -220,7 +222,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { code: data.room_code, name: data.name };
   }, []);
 
-  // ── Check Room ────────────────────────────────────────────────────
   const checkRoom = useCallback(async (code: string) => {
     const { data } = await supabase
       .from("sessions")
@@ -232,7 +233,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { exists: false };
   }, []);
 
-  // ── Join Room ─────────────────────────────────────────────────────
   const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
     const pid = pidRef.current;
     if (!pid) return;
@@ -277,7 +277,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [loadRoomState, subscribeToRoom, startHeartbeat]);
 
-  // ── Leave Room ────────────────────────────────────────────────────
   const leaveRoom = useCallback(() => {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
@@ -297,22 +296,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // ── Add Ticket ────────────────────────────────────────────────────
-  const addTicket = useCallback(async (title: string, description: string) => {
+  // ── Add Ticket (supports Jira metadata) ───────────────────────────
+  const addTicket = useCallback(async (options: AddTicketOptions) => {
     const sid = gameState.sessionId;
     const pid = pidRef.current;
     if (!sid || !pid) return;
     const order = gameState.tickets.length;
     await supabase.from("tickets").insert({
       session_id: sid,
-      title,
-      description,
+      title: options.title,
+      description: options.description,
       display_order: order,
       created_by: pid,
+      jira_key: options.jiraKey || null,
+      external_url: options.externalUrl || null,
     });
   }, [gameState.sessionId, gameState.tickets.length]);
 
-  // ── Start Voting ──────────────────────────────────────────────────
   const startVoting = useCallback(async (ticketId: string) => {
     const sid = gameState.sessionId;
     if (!sid) return;
@@ -321,7 +321,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await supabase.from("sessions").update({ current_ticket_id: ticketId }).eq("id", sid);
   }, [gameState.sessionId]);
 
-  // ── Cast Vote ─────────────────────────────────────────────────────
   const castVote = useCallback(async (ticketId: string, value: string) => {
     const sid = gameState.sessionId;
     const pid = pidRef.current;
@@ -337,12 +336,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, [gameState.sessionId]);
 
-  // ── Reveal Votes ──────────────────────────────────────────────────
   const revealVotes = useCallback(async (ticketId: string) => {
     await supabase.from("tickets").update({ status: "revealed" }).eq("id", ticketId);
   }, []);
 
-  // ── Lock Estimate ─────────────────────────────────────────────────
   const lockEstimate = useCallback(async (ticketId: string, finalEstimate: string) => {
     await supabase.from("tickets").update({
       status: "complete",
@@ -350,7 +347,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }).eq("id", ticketId);
   }, []);
 
-  // ── Re-vote ───────────────────────────────────────────────────────
   const revote = useCallback(async (ticketId: string) => {
     await supabase.from("votes").delete().eq("ticket_id", ticketId);
     await supabase.from("tickets").update({ status: "voting" }).eq("id", ticketId);
