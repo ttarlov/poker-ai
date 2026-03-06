@@ -3,39 +3,41 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 
-interface JiraTicket {
-  key: string;
-  title: string;
-  description: string;
-  summary: string | null;
-  issueType: string | null;
-  status: string | null;
-  priority: string | null;
-  assignee: string | null;
-  labels: string[];
-  url: string;
-}
-
 export default function TicketForm({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [jiraKey, setJiraKey] = useState("");
   const [jiraLoading, setJiraLoading] = useState(false);
   const [jiraError, setJiraError] = useState("");
-  const [jiraData, setJiraData] = useState<JiraTicket | null>(null);
+  const [jiraLoaded, setJiraLoaded] = useState(false);
+  const [jiraSummary, setJiraSummary] = useState<string | null>(null);
+  const [jiraIssueType, setJiraIssueType] = useState<string | null>(null);
+  const [jiraPriority, setJiraPriority] = useState<string | null>(null);
+  const [jiraAssignee, setJiraAssignee] = useState<string | null>(null);
+  const [jiraUrl, setJiraUrl] = useState<string | null>(null);
+  const [fullDescription, setFullDescription] = useState("");
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [mode, setMode] = useState<"manual" | "jira">("manual");
-  const { addTicket } = useStore();
+  const { addTicket, cacheJiraData } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    await addTicket({
-      title: title.trim(),
-      description: description.trim(),
-      jiraKey: jiraData?.key,
-      externalUrl: jiraData?.url,
-    });
+
+    if (jiraLoaded) {
+      await addTicket({
+        title: title.trim(),
+        description: "",
+        jiraKey: jiraKey.trim().toUpperCase(),
+        externalUrl: jiraUrl || undefined,
+      });
+    } else {
+      await addTicket({
+        title: title.trim(),
+        description: description.trim(),
+      });
+    }
+
     setTitle(""); setDescription(""); onClose();
   };
 
@@ -44,7 +46,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
     if (!key) { setJiraError("Enter a ticket key"); return; }
     setJiraError("");
     setJiraLoading(true);
-    setJiraData(null);
+    setJiraLoaded(false);
     setShowFullDesc(false);
 
     try {
@@ -57,9 +59,16 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
         return;
       }
 
-      setJiraData(data);
+      cacheJiraData(data);
+
+      setJiraLoaded(true);
       setTitle(data.key + ": " + data.title);
-      // Use the poker summary if available, otherwise fall back to full description
+      setJiraSummary(data.summary || null);
+      setJiraIssueType(data.issueType);
+      setJiraPriority(data.priority);
+      setJiraAssignee(data.assignee);
+      setJiraUrl(data.url);
+      setFullDescription(data.description || "");
       setDescription(data.summary || data.description || "");
       setJiraLoading(false);
     } catch (err) {
@@ -94,7 +103,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2 mb-5 mt-3">
             <button
               type="button"
-              onClick={() => { setMode("manual"); setJiraError(""); }}
+              onClick={() => { setMode("manual"); setJiraError(""); setJiraLoaded(false); }}
               className="px-3 py-1.5 text-sm rounded-lg transition-all"
               style={{
                 background: mode === "manual" ? "color-mix(in srgb, var(--accent) 20%, transparent)" : "transparent",
@@ -151,39 +160,39 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
               {jiraError && (
                 <p className="text-sm mt-2" style={{ color: "var(--red-suit, #ef4444)" }}>{jiraError}</p>
               )}
-              {jiraData && (
+              {jiraLoaded && (
                 <div className="mt-3 rounded-xl text-sm" style={{ background: "color-mix(in srgb, var(--status-active) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--status-active) 30%, transparent)" }}>
                   <div className="p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span style={{ color: "var(--status-active)" }}>✓</span>
-                      <span className="font-mono text-xs" style={{ color: "var(--accent)" }}>{jiraData.key}</span>
-                      {jiraData.issueType && (
+                      <span className="font-mono text-xs" style={{ color: "var(--accent)" }}>{jiraKey.toUpperCase()}</span>
+                      {jiraIssueType && (
                         <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "var(--input-bg)", color: "var(--text-muted)" }}>
-                          {jiraData.issueType}
+                          {jiraIssueType}
                         </span>
                       )}
-                      {jiraData.priority && (
-                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{jiraData.priority}</span>
+                      {jiraPriority && (
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{jiraPriority}</span>
                       )}
                     </div>
-                    <p style={{ color: "var(--text-primary)" }}>{jiraData.title}</p>
-                    {jiraData.assignee && (
-                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Assigned to {jiraData.assignee}</p>
+                    <p style={{ color: "var(--text-primary)" }}>{title}</p>
+                    {jiraAssignee && (
+                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Assigned to {jiraAssignee}</p>
                     )}
                   </div>
 
-                  {/* Poker Summary indicator */}
-                  {jiraData.summary && (
+                  {/* Poker Summary — scrollable */}
+                  {jiraSummary && (
                     <div className="px-3 pb-3 pt-1" style={{ borderTop: "1px solid color-mix(in srgb, var(--status-active) 20%, transparent)" }}>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>📋 Poker Summary</span>
+                      <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>📋 Poker Summary</span>
+                      <div className="mt-1 max-h-28 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}>
+                        <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>{jiraSummary}</p>
                       </div>
-                      <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{jiraData.summary}</p>
                     </div>
                   )}
 
-                  {/* Full description toggle */}
-                  {jiraData.description && jiraData.summary && (
+                  {/* Full description — expandable and scrollable */}
+                  {fullDescription && (
                     <div className="px-3 pb-3">
                       <button
                         type="button"
@@ -193,10 +202,12 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
                         {showFullDesc ? "▲ Hide full description" : "▼ Show full Jira description"}
                       </button>
                       {showFullDesc && (
-                        <p className="text-xs mt-2 leading-relaxed whitespace-pre-wrap p-2 rounded-lg"
-                           style={{ color: "var(--text-muted)", background: "color-mix(in srgb, var(--bg-dark) 50%, transparent)" }}>
-                          {jiraData.description}
-                        </p>
+                        <div className="mt-2 max-h-40 overflow-y-auto p-2 rounded-lg pr-1"
+                             style={{ background: "color-mix(in srgb, var(--bg-dark) 50%, transparent)", scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}>
+                          <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-muted)" }}>
+                            {fullDescription}
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -217,18 +228,20 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
                 onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
                 onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
             </div>
-            <div>
-              <label className="block text-sm mb-1.5" style={{ color: "var(--text-secondary)" }}>
-                {jiraData?.summary ? "Summary" : "Description"} <span style={{ color: "var(--text-muted)" }}>(editable)</span>
-              </label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)}
-                placeholder={mode === "jira" ? "Auto-filled from Jira" : "Acceptance criteria, notes, context..."}
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl resize-none transition-all focus:outline-none"
-                style={inputStyle}
-                onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
-                onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
-            </div>
+            {!jiraLoaded && (
+              <div>
+                <label className="block text-sm mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                  Description <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+                </label>
+                <textarea value={description} onChange={e => setDescription(e.target.value)}
+                  placeholder="Acceptance criteria, notes, context..."
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl resize-none transition-all focus:outline-none"
+                  style={inputStyle}
+                  onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
+                  onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
+              </div>
+            )}
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={onClose}
                 className="flex-1 py-3 rounded-xl transition-all"

@@ -34,6 +34,24 @@ interface Vote {
   value: string;
 }
 
+interface JiraData {
+  key: string;
+  title: string;
+  description: string;
+  summary: string | null;
+  issueType: string | null;
+  status: string | null;
+  priority: string | null;
+  assignee: string | null;
+  labels: string[];
+  url: string;
+}
+
+interface JiraCacheEntry {
+  data: JiraData;
+  fetchedAt: number;
+}
+
 interface GameState {
   roomCode: string | null;
   roomName: string | null;
@@ -57,6 +75,7 @@ interface StoreContextType {
   ready: boolean;
   loading: boolean;
   roomError: string | null;
+  jiraCache: Record<string, JiraCacheEntry>;
   createRoom: (name: string) => Promise<{ code: string; name: string }>;
   checkRoom: (code: string) => Promise<{ exists: boolean; name?: string; code?: string }>;
   joinRoom: (roomCode: string, displayName: string) => Promise<void>;
@@ -67,14 +86,47 @@ interface StoreContextType {
   revealVotes: (ticketId: string) => Promise<void>;
   lockEstimate: (ticketId: string, finalEstimate: string) => Promise<void>;
   revote: (ticketId: string) => Promise<void>;
+  fetchJiraData: (jiraKey: string) => Promise<JiraData | null>;
+  cacheJiraData: (data: JiraData) => void;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
+
+const JIRA_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const JIRA_CACHE_STORAGE_KEY = "pokerai_jira_cache";
 
 export function useStore() {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error("useStore must be used within StoreProvider");
   return ctx;
+}
+
+// ── Jira Cache Helpers ────────────────────────────────────────────────
+function loadJiraCacheFromStorage(): Record<string, JiraCacheEntry> {
+  try {
+    const raw = sessionStorage.getItem(JIRA_CACHE_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, JiraCacheEntry>;
+    const now = Date.now();
+    // Prune expired entries
+    const valid: Record<string, JiraCacheEntry> = {};
+    for (const [key, entry] of Object.entries(parsed)) {
+      if (now - entry.fetchedAt < JIRA_CACHE_TTL) {
+        valid[key] = entry;
+      }
+    }
+    return valid;
+  } catch {
+    return {};
+  }
+}
+
+function saveJiraCacheToStorage(cache: Record<string, JiraCacheEntry>) {
+  try {
+    sessionStorage.setItem(JIRA_CACHE_STORAGE_KEY, JSON.stringify(cache));
+  } catch {
+    // sessionStorage full or unavailable — ignore
+  }
 }
 
 // ── Provider ──────────────────────────────────────────────────────────
@@ -92,11 +144,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     votes: {},
   });
 
+  const [jiraCache, setJiraCache] = useState<Record<string, JiraCacheEntry>>({});
+
   const pidRef = useRef<string>("");
   const [myParticipantId, setMyParticipantId] = useState("");
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Initialize participant ID and load Jira cache from sessionStorage
   useEffect(() => {
     const key = "pokerai_pid";
     let pid = sessionStorage.getItem(key);
@@ -106,7 +161,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     pidRef.current = pid;
     setMyParticipantId(pid);
+
+    // Load cached Jira data
+    setJiraCache(loadJiraCacheFromStorage());
+
     setReady(true);
+  }, []);
+
+  // Periodic TTL cleanup (every 5 minutes)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setJiraCache(prev => {
+        const now = Date.now();
+        const valid: Record<string, JiraCacheEntry> = {};
+        let changed = false;
+        for (const [key, entry] of Object.entries(prev)) {
+          if (now - entry.fetchedAt < JIRA_CACHE_TTL) {
+            valid[key] = entry;
+          } else {
+            changed = true;
+          }
+        }
+        if (changed) {
+          saveJiraCacheToStorage(valid);
+          return valid;
+        }
+        return prev;
+      });
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -116,6 +199,38 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // ── Jira Cache Operations ─────────────────────────────────────────
+  const cacheJiraData = useCallback((data: JiraData) => {
+    const entry: JiraCacheEntry = { data, fetchedAt: Date.now() };
+    setJiraCache(prev => {
+      const updated = { ...prev, [data.key]: entry };
+      saveJiraCacheToStorage(updated);
+      return updated;
+    });
+  }, []);
+
+  const fetchJiraData = useCallback(async (jiraKey: string): Promise<JiraData | null> => {
+    const key = jiraKey.toUpperCase();
+
+    // Check in-memory cache first
+    const cached = jiraCache[key];
+    if (cached && Date.now() - cached.fetchedAt < JIRA_CACHE_TTL) {
+      return cached.data;
+    }
+
+    // Fetch from API
+    try {
+      const res = await fetch("/api/jira/" + encodeURIComponent(key));
+      if (!res.ok) return null;
+      const data: JiraData = await res.json();
+      cacheJiraData(data);
+      return data;
+    } catch {
+      return null;
+    }
+  }, [jiraCache, cacheJiraData]);
+
+  // ── Load full room state from DB ──────────────────────────────────
   const loadRoomState = useCallback(async (sessionId: string) => {
     const [participantsRes, ticketsRes, votesRes] = await Promise.all([
       supabase.from("session_participants").select("*").eq("session_id", sessionId).order("joined_at"),
@@ -296,16 +411,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // ── Add Ticket (supports Jira metadata) ───────────────────────────
+  // ── Add Ticket — Jira tickets save NO description to DB ───────────
   const addTicket = useCallback(async (options: AddTicketOptions) => {
     const sid = gameState.sessionId;
     const pid = pidRef.current;
     if (!sid || !pid) return;
     const order = gameState.tickets.length;
+
+    const isJira = !!options.jiraKey;
+
     await supabase.from("tickets").insert({
       session_id: sid,
       title: options.title,
-      description: options.description,
+      // Only persist description for manual tickets — Jira descriptions stay in browser cache only
+      description: isJira ? "" : options.description,
       display_order: order,
       created_by: pid,
       jira_key: options.jiraKey || null,
@@ -354,9 +473,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      gameState, myParticipantId, ready, loading, roomError,
+      gameState, myParticipantId, ready, loading, roomError, jiraCache,
       createRoom, checkRoom, joinRoom, leaveRoom,
       addTicket, startVoting, castVote, revealVotes, lockEstimate, revote,
+      fetchJiraData, cacheJiraData,
     }}>
       {children}
     </StoreContext.Provider>

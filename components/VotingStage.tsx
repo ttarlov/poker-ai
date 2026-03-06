@@ -28,10 +28,8 @@ export default function VotingStage() {
     t => t.status === "pending" && t.id !== gameState.currentTicketId
   );
 
-  // Get votes for current ticket
   const ticketVotes = currentTicket ? (gameState.votes[currentTicket.id] || []) : [];
 
-  // Compute revealed vote details with participant names
   const revealedData = useMemo(() => {
     if (!currentTicket || currentTicket.status !== "revealed") return null;
     const votes = ticketVotes.map(v => {
@@ -47,19 +45,16 @@ export default function VotingStage() {
     return { votes, stats };
   }, [currentTicket, ticketVotes, gameState.participants]);
 
-  // Auto-select closest point when votes are revealed
   useEffect(() => {
     if (revealedData && revealedData.stats) {
       setSelectedEstimate(closestPoint(revealedData.stats.average));
     }
   }, [revealedData]);
 
-  // Reset selection when ticket changes
   useEffect(() => {
     setSelectedEstimate(null);
   }, [gameState.currentTicketId]);
 
-  // No current ticket — show first pending
   if (!currentTicket && gameState.tickets.length > 0) {
     const firstPending = gameState.tickets.find(t => t.status === "pending");
     if (!firstPending) return null;
@@ -76,14 +71,12 @@ export default function VotingStage() {
   }
   if (!currentTicket) return null;
 
-  // Set of participant_ids who voted
   const votedPids = new Set(ticketVotes.map(v => v.participant_id));
 
   return (
     <div className="flex-1 flex flex-col">
       <TicketDisplay ticket={currentTicket} />
 
-      {/* VOTING */}
       {currentTicket.status === "voting" && (
         <div className="mt-8">
           <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -120,7 +113,6 @@ export default function VotingStage() {
         </div>
       )}
 
-      {/* REVEALED */}
       {currentTicket.status === "revealed" && revealedData && (
         <div className="mt-8 animate-fade-in">
           <div className="flex flex-wrap items-end justify-center gap-4 mb-8">
@@ -196,7 +188,6 @@ export default function VotingStage() {
         </div>
       )}
 
-      {/* COMPLETE */}
       {currentTicket.status === "complete" && (
         <div className="mt-8 text-center animate-fade-in">
           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl"
@@ -221,7 +212,34 @@ export default function VotingStage() {
   );
 }
 
+// ── TicketDisplay — fetches Jira data from cache, scrollable areas ───
 function TicketDisplay({ ticket }: { ticket: any }) {
+  const { jiraCache, fetchJiraData } = useStore();
+  const [jiraDescription, setJiraDescription] = useState<string | null>(null);
+  const [jiraSummary, setJiraSummary] = useState<string | null>(null);
+  const [jiraLoading, setJiraLoading] = useState(false);
+  const [showFullDesc, setShowFullDesc] = useState(false);
+
+  useEffect(() => {
+    if (!ticket.jira_key) return;
+
+    const cached = jiraCache[ticket.jira_key];
+    if (cached) {
+      setJiraDescription(cached.data.description);
+      setJiraSummary(cached.data.summary);
+      return;
+    }
+
+    setJiraLoading(true);
+    fetchJiraData(ticket.jira_key).then(data => {
+      if (data) {
+        setJiraDescription(data.description);
+        setJiraSummary(data.summary);
+      }
+      setJiraLoading(false);
+    });
+  }, [ticket.jira_key, jiraCache, fetchJiraData]);
+
   const badges: Record<string, { label: string; bg: string; text: string }> = {
     pending: { label: "Pending", bg: "var(--badge-pending-bg)", text: "var(--badge-pending-text)" },
     voting: { label: "Voting", bg: "var(--badge-voting-bg)", text: "var(--badge-voting-text)" },
@@ -234,11 +252,21 @@ function TicketDisplay({ ticket }: { ticket: any }) {
     <div className="rounded-2xl p-6" style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-xs px-2 py-0.5 rounded"
                   style={{ background: b.bg, color: b.text, border: "1px solid color-mix(in srgb, " + b.text + " 30%, transparent)" }}>
               {b.label}
             </span>
+            {ticket.jira_key && (
+              <a href={ticket.external_url || "#"} target="_blank" rel="noopener noreferrer"
+                 className="text-xs font-mono px-2 py-0.5 rounded flex items-center gap-1 transition-all hover:opacity-80"
+                 style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84c0-.46-.38-.84-.84-.84H11.53zM6.77 6.8c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V7.64c0-.46-.38-.84-.84-.84H6.77zM2 11.6c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V12.44c0-.46-.38-.84-.84-.84H2z"/>
+                </svg>
+                {ticket.jira_key}
+              </a>
+            )}
             {ticket.final_estimate && (
               <span className="font-mono text-sm px-2 py-0.5 rounded"
                     style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)" }}>
@@ -247,10 +275,48 @@ function TicketDisplay({ ticket }: { ticket: any }) {
             )}
           </div>
           <h2 className="font-display text-2xl" style={{ color: "var(--text-primary)" }}>{ticket.title}</h2>
-          {ticket.description && (
-            <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
-              {ticket.description}
-            </p>
+
+          {ticket.jira_key && jiraLoading && (
+            <p className="mt-2 text-sm animate-pulse" style={{ color: "var(--text-muted)" }}>Loading ticket details from Jira...</p>
+          )}
+
+          {/* Poker Summary — scrollable */}
+          {jiraSummary && (
+            <div className="mt-3 p-3 rounded-xl" style={{ background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 15%, transparent)" }}>
+              <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>📋 Summary</span>
+              <div className="mt-1 max-h-32 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>{jiraSummary}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Manual ticket description — scrollable */}
+          {!ticket.jira_key && ticket.description && (
+            <div className="mt-2 max-h-40 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
+                {ticket.description}
+              </p>
+            </div>
+          )}
+
+          {/* Full Jira description — expandable and scrollable */}
+          {ticket.jira_key && jiraDescription && !jiraLoading && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowFullDesc(!showFullDesc)}
+                className="text-xs transition-all"
+                style={{ color: "var(--text-muted)" }}>
+                {showFullDesc ? "▲ Hide full description" : "▼ Show full Jira description"}
+              </button>
+              {showFullDesc && (
+                <div className="mt-2 max-h-48 overflow-y-auto p-3 rounded-lg pr-2"
+                     style={{ background: "color-mix(in srgb, var(--bg-dark) 50%, transparent)", scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-muted)" }}>
+                    {jiraDescription}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
