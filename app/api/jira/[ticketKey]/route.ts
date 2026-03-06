@@ -8,6 +8,7 @@ export async function GET(
   const baseUrl = process.env.JIRA_BASE_URL;
   const apiToken = process.env.JIRA_API_TOKEN;
   const email = process.env.JIRA_EMAIL;
+  const debug = request.nextUrl.searchParams.get("debug") === "true";
 
   if (!baseUrl || !apiToken || !email) {
     return NextResponse.json(
@@ -48,9 +49,10 @@ export async function GET(
     const data = await response.json();
     const fields = data.fields;
     const description = extractTextFromADF(fields.description);
-    const pokerSummary = extractPokerSummary(fields.comment?.comments || []);
+    const comments = fields.comment?.comments || [];
+    const pokerSummary = extractPokerSummary(comments);
 
-    return NextResponse.json({
+    const result: any = {
       key: data.key,
       title: fields.summary || "",
       description: description,
@@ -61,7 +63,22 @@ export async function GET(
       assignee: fields.assignee?.displayName || null,
       labels: fields.labels || [],
       url: `${baseUrl}/browse/${data.key}`,
-    });
+    };
+
+    // Debug mode: include raw comment data to diagnose parsing issues
+    if (debug) {
+      result._debug = {
+        commentCount: comments.length,
+        comments: comments.map((c: any) => ({
+          id: c.id,
+          author: c.author?.displayName,
+          extractedText: extractTextFromADF(c.body),
+          rawBody: c.body,
+        })),
+      };
+    }
+
+    return NextResponse.json(result);
   } catch (err) {
     console.error("Jira fetch error:", err);
     return NextResponse.json({ error: "Failed to connect to Jira" }, { status: 502 });
@@ -69,15 +86,45 @@ export async function GET(
 }
 
 function extractPokerSummary(comments: any[]): string | null {
+  // Search newest comments first
   const reversed = [...comments].reverse();
+
   for (const comment of reversed) {
     const text = extractTextFromADF(comment.body);
-    const tagIndex = text.indexOf("[POKER-SUMMARY]");
-    if (tagIndex !== -1) {
-      const summary = text.substring(tagIndex + "[POKER-SUMMARY]".length).trim();
+
+    // Try exact match first
+    const exactIndex = text.indexOf("[POKER-SUMMARY]");
+    if (exactIndex !== -1) {
+      const summary = text.substring(exactIndex + "[POKER-SUMMARY]".length).trim();
+      if (summary) return summary;
+    }
+
+    // Try without brackets (in case ADF formatting strips them)
+    const noBracketIndex = text.indexOf("POKER-SUMMARY");
+    if (noBracketIndex !== -1) {
+      // Find the end of the tag (skip past any trailing brackets, colons, dashes)
+      let endIndex = noBracketIndex + "POKER-SUMMARY".length;
+      while (endIndex < text.length && /[\]\s:—\-]/.test(text[endIndex])) {
+        endIndex++;
+      }
+      const summary = text.substring(endIndex).trim();
+      if (summary) return summary;
+    }
+
+    // Try case-insensitive
+    const lowerText = text.toLowerCase();
+    const ciIndex = lowerText.indexOf("poker-summary");
+    if (ciIndex !== -1) {
+      let endIndex = ciIndex + "poker-summary".length;
+      // Skip past tag wrapper chars
+      while (endIndex < text.length && /[\[\]\s:—\-]/.test(text[endIndex])) {
+        endIndex++;
+      }
+      const summary = text.substring(endIndex).trim();
       if (summary) return summary;
     }
   }
+
   return null;
 }
 
@@ -85,6 +132,12 @@ function extractTextFromADF(node: any): string {
   if (!node) return "";
   if (typeof node === "string") return node;
   if (node.type === "text") return node.text || "";
+
+  // Handle inline cards (Jira links, mentions, etc.)
+  if (node.type === "inlineCard") return "";
+  if (node.type === "mention") return node.attrs?.text || "";
+  if (node.type === "emoji") return node.attrs?.shortName || "";
+  if (node.type === "hardBreak") return "\n";
 
   if (node.content && Array.isArray(node.content)) {
     const parts = node.content.map((child: any) => {
