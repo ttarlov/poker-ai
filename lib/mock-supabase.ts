@@ -192,6 +192,16 @@ class MockChannel {
   }
 }
 
+// ── Mock auth user ───────────────────────────────────────────────────
+const MOCK_USER = {
+  id: "mock-user-001",
+  email: "mock@local.dev",
+  user_metadata: {
+    full_name: "Local Dev",
+    avatar_url: null,
+  },
+};
+
 // ── Exported factory ──────────────────────────────────────────────────
 export function createMockClient() {
   return {
@@ -214,6 +224,34 @@ export function createMockClient() {
       if (channel?.channelName) {
         activeChannels.delete(channel.channelName);
       }
+    },
+
+    // ── Auth stubs for mock mode ──────────────────────────────────────
+    auth: {
+      getUser() {
+        return Promise.resolve({ data: { user: MOCK_USER }, error: null });
+      },
+      getSession() {
+        return Promise.resolve({
+          data: { session: { user: MOCK_USER } },
+          error: null,
+        });
+      },
+      onAuthStateChange(_callback: any) {
+        // In mock mode the user never changes — just return a no-op subscription
+        return {
+          data: { subscription: { unsubscribe: () => {} } },
+        };
+      },
+      signInWithOAuth(_opts: any) {
+        return Promise.resolve({ data: {}, error: null });
+      },
+      signOut() {
+        return Promise.resolve({ error: null });
+      },
+      exchangeCodeForSession(_code: string) {
+        return Promise.resolve({ data: { session: { user: MOCK_USER } }, error: null });
+      },
     },
   };
 }
