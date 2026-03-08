@@ -133,7 +133,7 @@ export default function SessionRoom() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <h1 className="font-display text-3xl mb-2" style={{ color: "var(--card-face)" }}>
+            <h1 className="font-display text-3xl mb-2" style={{ color: "var(--text-primary)" }}>
               Poker<span style={{ color: "var(--accent)" }}>AI</span>
             </h1>
             <div className="flex items-center justify-center gap-2 mt-3">
@@ -187,7 +187,7 @@ export default function SessionRoom() {
               style={{ borderBottom: "1px solid var(--header-border)", background: "var(--header-bg)" }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="font-display text-xl cursor-pointer" style={{ color: "var(--card-face)" }}
+            <h1 className="font-display text-xl cursor-pointer" style={{ color: "var(--text-primary)" }}
                 onClick={() => router.push("/")}>
               Poker<span style={{ color: "var(--accent)" }}>AI</span>
             </h1>

@@ -82,7 +82,7 @@ export default function Home() {
             </div>
           </div>
           <h1 className="font-display text-5xl tracking-tight mb-2"
-              style={{ color: "var(--card-face)" }}>
+              style={{ color: "var(--text-primary)" }}>
             Poker<span style={{ color: "var(--accent)" }}>AI</span>
           </h1>
           <p className="text-sm tracking-widest uppercase"
