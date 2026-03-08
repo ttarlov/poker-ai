@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -71,10 +70,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeSwitcher />
-      </div>
-
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-10">
@@ -102,7 +97,7 @@ export default function Home() {
                  style={{ color: "var(--text-muted)" }}>Display Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)}
             placeholder="Your name" maxLength={24} autoFocus
-            className="w-full px-4 py-3 rounded-xl text-lg transition-all focus:outline-none"
+            className="w-full px-4 py-3 rounded-full text-lg transition-all focus:outline-none"
             style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
             onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
             onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
@@ -111,12 +106,12 @@ export default function Home() {
         {mode === "home" && (
           <div className="space-y-3 animate-fade-in">
             <button onClick={() => setMode("create")}
-              className="w-full py-4 font-bold text-lg rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg transition-all duration-200"
               style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
               Create a Room
             </button>
             <button onClick={() => setMode("join")}
-              className="w-full py-4 font-bold text-lg rounded-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+              className="w-full py-4 font-bold text-lg rounded-full transition-all duration-200"
               style={{ background: "var(--btn-secondary-bg)", color: "var(--btn-secondary-text)", border: "1px solid var(--btn-secondary-border)" }}>
               Join with Code
             </button>
@@ -131,14 +126,14 @@ export default function Home() {
               </label>
               <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
                 placeholder="e.g. Sprint 43 Planning" maxLength={60}
-                className="w-full px-4 py-3 rounded-xl transition-all focus:outline-none"
+                className="w-full px-4 py-3 rounded-full transition-all focus:outline-none"
                 style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
                 onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
                 onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
             </div>
             {error && <p className="text-sm" style={{ color: "var(--red-suit)" }}>{error}</p>}
             <button type="submit" disabled={!name.trim() || loading}
-              className="w-full py-4 font-bold text-lg rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
               style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
               {loading ? "Creating..." : "Create & Join"}
             </button>
@@ -153,14 +148,14 @@ export default function Home() {
               <label className="block text-xs mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Room Code</label>
               <input type="text" value={joinCode} onChange={e => setJoinCode(formatCode(e.target.value))}
                 placeholder="ABC-123" maxLength={7}
-                className="w-full px-4 py-3 rounded-xl text-center text-2xl font-mono tracking-widest transition-all focus:outline-none uppercase"
+                className="w-full px-4 py-3 rounded-full text-center text-2xl font-mono tracking-widest transition-all focus:outline-none uppercase"
                 style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--accent)" }}
                 onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
                 onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
             </div>
             {error && <p className="text-sm" style={{ color: "var(--red-suit)" }}>{error}</p>}
             <button type="submit" disabled={!name.trim() || joinCode.length < 7 || loading}
-              className="w-full py-4 font-bold text-lg rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
               style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
               {loading ? "Joining..." : "Join Room"}
             </button>

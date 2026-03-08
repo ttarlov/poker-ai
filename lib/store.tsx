@@ -45,6 +45,8 @@ interface JiraData {
   assignee: string | null;
   labels: string[];
   url: string;
+  aiEstimate: string | null;
+  aiReasoning: string | null;
 }
 
 interface JiraCacheEntry {
@@ -435,6 +437,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const startVoting = useCallback(async (ticketId: string) => {
     const sid = gameState.sessionId;
     if (!sid) return;
+    // Optimistic update — instant UI response
+    setGameState(prev => ({
+      ...prev,
+      currentTicketId: ticketId,
+      tickets: prev.tickets.map(t =>
+        t.id === ticketId ? { ...t, status: "voting" as const } : t
+      ),
+      votes: { ...prev.votes, [ticketId]: [] },
+    }));
     await supabase.from("votes").delete().eq("ticket_id", ticketId);
     await supabase.from("tickets").update({ status: "voting" }).eq("id", ticketId);
     await supabase.from("sessions").update({ current_ticket_id: ticketId }).eq("id", sid);
@@ -444,6 +455,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const sid = gameState.sessionId;
     const pid = pidRef.current;
     if (!sid || !pid) return;
+    // Optimistic update — instant UI response
+    setGameState(prev => {
+      const existing = (prev.votes[ticketId] || []).filter(v => v.participant_id !== pid);
+      return {
+        ...prev,
+        votes: {
+          ...prev.votes,
+          [ticketId]: [...existing, { id: "optimistic-" + pid, ticket_id: ticketId, participant_id: pid, value }],
+        },
+      };
+    });
     await supabase.from("votes").upsert({
       ticket_id: ticketId,
       session_id: sid,
@@ -456,10 +478,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [gameState.sessionId]);
 
   const revealVotes = useCallback(async (ticketId: string) => {
+    // Optimistic update — instant UI response
+    setGameState(prev => ({
+      ...prev,
+      tickets: prev.tickets.map(t =>
+        t.id === ticketId ? { ...t, status: "revealed" as const } : t
+      ),
+    }));
     await supabase.from("tickets").update({ status: "revealed" }).eq("id", ticketId);
   }, []);
 
   const lockEstimate = useCallback(async (ticketId: string, finalEstimate: string) => {
+    // Optimistic update — instant UI response
+    setGameState(prev => ({
+      ...prev,
+      tickets: prev.tickets.map(t =>
+        t.id === ticketId ? { ...t, status: "complete" as const, final_estimate: finalEstimate } : t
+      ),
+    }));
     await supabase.from("tickets").update({
       status: "complete",
       final_estimate: finalEstimate,
@@ -467,6 +503,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const revote = useCallback(async (ticketId: string) => {
+    // Optimistic update — instant UI response
+    setGameState(prev => ({
+      ...prev,
+      tickets: prev.tickets.map(t =>
+        t.id === ticketId ? { ...t, status: "voting" as const } : t
+      ),
+      votes: { ...prev.votes, [ticketId]: [] },
+    }));
     await supabase.from("votes").delete().eq("ticket_id", ticketId);
     await supabase.from("tickets").update({ status: "voting" }).eq("id", ticketId);
   }, []);

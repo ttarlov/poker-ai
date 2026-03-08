@@ -27,7 +27,7 @@ export default function TicketQueue({
           <button key={ticket.id}
             onClick={() => isClickable && onTicketClick(ticket.id)}
             disabled={!isClickable}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg shrink-0 text-sm transition-all duration-200 disabled:cursor-default"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0 text-sm transition-all duration-200 disabled:cursor-default"
             style={{
               background: isCurrent ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "var(--input-bg)",
               border: isCurrent ? "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" : "1px solid var(--border-subtle)",

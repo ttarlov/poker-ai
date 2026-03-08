@@ -41,7 +41,7 @@ export default function SessionSummary({ tickets, onClose }: { tickets: Ticket[]
         </div>
         <div className="flex gap-2">
           <button onClick={handleCopy}
-            className="px-4 py-2 text-sm rounded-lg transition-all"
+            className="px-4 py-2 text-sm rounded-full transition-all"
             style={{
               background: copied ? "color-mix(in srgb, var(--status-active) 20%, transparent)" : "color-mix(in srgb, var(--accent) 20%, transparent)",
               color: copied ? "var(--status-active)" : "var(--accent)",
@@ -50,14 +50,14 @@ export default function SessionSummary({ tickets, onClose }: { tickets: Ticket[]
             {copied ? "✓ Copied!" : "Copy Summary"}
           </button>
           <button onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg transition-all"
+            className="px-4 py-2 text-sm rounded-full transition-all"
             style={{ color: "var(--text-secondary)", border: "1px solid var(--border-medium)" }}>Back</button>
         </div>
       </div>
 
       <div className="space-y-3">
         {tickets.map((ticket, i) => (
-          <div key={ticket.id} className="flex items-center gap-4 p-4 rounded-xl"
+          <div key={ticket.id} className="flex items-center gap-4 p-4 rounded-sm shadow-sm"
             style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
             <span className="font-mono text-sm w-6 text-right" style={{ color: "var(--text-muted)" }}>{i + 1}</span>
             <div className="flex-1 min-w-0">

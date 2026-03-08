@@ -94,7 +94,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 backdrop-blur-sm"
            style={{ background: "var(--overlay-bg)" }} onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-2xl shadow-2xl animate-slide-up overflow-y-auto max-h-[90vh]"
+      <div className="relative w-full max-w-lg rounded-sm shadow-lg animate-slide-up overflow-y-auto max-h-[90vh]"
            style={{ background: "var(--bg)", border: "1px solid var(--border-medium)" }}>
         <div className="p-6">
           <h2 className="font-display text-xl mb-1" style={{ color: "var(--text-primary)" }}>Add Ticket</h2>
@@ -104,7 +104,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={() => { setMode("manual"); setJiraError(""); setJiraLoaded(false); }}
-              className="px-3 py-1.5 text-sm rounded-lg transition-all"
+              className="px-3 py-1.5 text-sm rounded-full transition-all"
               style={{
                 background: mode === "manual" ? "color-mix(in srgb, var(--accent) 20%, transparent)" : "transparent",
                 color: mode === "manual" ? "var(--accent)" : "var(--text-muted)",
@@ -115,7 +115,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={() => { setMode("jira"); setJiraError(""); }}
-              className="px-3 py-1.5 text-sm rounded-lg transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 text-sm rounded-full transition-all flex items-center gap-1.5"
               style={{
                 background: mode === "jira" ? "color-mix(in srgb, var(--accent) 20%, transparent)" : "transparent",
                 color: mode === "jira" ? "var(--accent)" : "var(--text-muted)",
@@ -139,7 +139,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
                   onChange={e => setJiraKey(e.target.value.toUpperCase())}
                   onKeyDown={handleJiraKeyDown}
                   placeholder="e.g. ENG-1234"
-                  className="flex-1 px-4 py-3 rounded-xl font-mono transition-all focus:outline-none uppercase"
+                  className="flex-1 px-4 py-3 rounded-full font-mono transition-all focus:outline-none uppercase"
                   style={inputStyle}
                   onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
                   onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }}
@@ -149,7 +149,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
                   type="button"
                   onClick={handleJiraLoad}
                   disabled={jiraLoading || !jiraKey.trim()}
-                  className="px-4 py-3 rounded-xl font-medium text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-3 rounded-full font-medium text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
                     background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))",
                     color: "var(--btn-primary-text)",
@@ -161,7 +161,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
                 <p className="text-sm mt-2" style={{ color: "var(--red-suit, #ef4444)" }}>{jiraError}</p>
               )}
               {jiraLoaded && (
-                <div className="mt-3 rounded-xl text-sm" style={{ background: "color-mix(in srgb, var(--status-active) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--status-active) 30%, transparent)" }}>
+                <div className="mt-3 rounded-sm text-sm" style={{ background: "color-mix(in srgb, var(--status-active) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--status-active) 30%, transparent)" }}>
                   <div className="p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span style={{ color: "var(--status-active)" }}>✓</span>
@@ -223,7 +223,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                 placeholder={mode === "jira" ? "Auto-filled from Jira" : "e.g. Add user authentication flow"}
                 autoFocus={mode === "manual"}
-                className="w-full px-4 py-3 rounded-xl transition-all focus:outline-none"
+                className="w-full px-4 py-3 rounded-full transition-all focus:outline-none"
                 style={inputStyle}
                 onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
                 onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
@@ -236,7 +236,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
                 <textarea value={description} onChange={e => setDescription(e.target.value)}
                   placeholder="Acceptance criteria, notes, context..."
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl resize-none transition-all focus:outline-none"
+                  className="w-full px-4 py-3 rounded-sm resize-none transition-all focus:outline-none"
                   style={inputStyle}
                   onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
                   onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
@@ -244,10 +244,10 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
             )}
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={onClose}
-                className="flex-1 py-3 rounded-xl transition-all"
+                className="flex-1 py-3 rounded-full transition-all"
                 style={{ color: "var(--text-secondary)", border: "1px solid var(--border-medium)" }}>Cancel</button>
               <button type="submit" disabled={!title.trim()}
-                className="flex-1 py-3 font-bold rounded-xl hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex-1 py-3 font-bold rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
                 Add to Queue
               </button>

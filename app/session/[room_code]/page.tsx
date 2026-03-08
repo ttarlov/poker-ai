@@ -10,7 +10,6 @@ import VotingStage from "@/components/VotingStage";
 import VotingCards from "@/components/VotingCards";
 import SessionSummary from "@/components/SessionSummary";
 import PointsSummary from "@/components/PointsSummary";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
 import UserMenu from "@/components/UserMenu";
 
 export default function SessionRoom() {
@@ -107,7 +106,7 @@ export default function SessionRoom() {
             The room <span className="font-mono" style={{ color: "var(--accent)" }}>{roomCode}</span> does not exist or has expired.
           </p>
           <button onClick={() => router.push("/")}
-            className="px-6 py-3 font-bold rounded-xl transition-all"
+            className="px-6 py-3 font-bold rounded-full transition-all"
             style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
             Back to Home
           </button>
@@ -150,13 +149,13 @@ export default function SessionRoom() {
               <label className="block text-xs mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Your Display Name</label>
               <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
                 placeholder="Enter your name" maxLength={24} autoFocus
-                className="w-full px-4 py-3 rounded-xl text-lg transition-all focus:outline-none"
+                className="w-full px-4 py-3 rounded-full text-lg transition-all focus:outline-none"
                 style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
                 onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
                 onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
             </div>
             <button type="submit" disabled={!nameInput.trim() || loading}
-              className="w-full py-4 font-bold text-lg rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
               style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
               {loading ? "Joining..." : "Join the Table"}
             </button>
@@ -218,7 +217,6 @@ export default function SessionRoom() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <ThemeSwitcher />
             <ParticipantList participants={gameState.participants} />
             <UserMenu displayName={displayName} onSignOut={handleSignOut} />
           </div>
@@ -248,13 +246,13 @@ export default function SessionRoom() {
               <div className="flex gap-2 shrink-0">
                 {allComplete && (
                   <button onClick={() => setShowSummary(true)}
-                    className="px-4 py-2 text-sm rounded-lg transition-all"
+                    className="px-4 py-2 text-sm rounded-full transition-all"
                     style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" }}>
                     View Summary
                   </button>
                 )}
                 <button onClick={() => setShowTicketForm(true)}
-                  className="px-4 py-2 text-sm rounded-lg transition-all"
+                  className="px-4 py-2 text-sm rounded-full transition-all"
                   style={{ background: "var(--btn-secondary-bg)", color: "var(--btn-secondary-text)", border: "1px solid var(--btn-secondary-border)" }}>
                   + Add Ticket
                 </button>
@@ -275,7 +273,7 @@ export default function SessionRoom() {
                   {copied ? "✓ Link copied!" : (typeof window !== "undefined" ? window.location.origin : "") + "/session/" + roomCode}
                 </button>
                 <button onClick={() => setShowTicketForm(true)}
-                  className="px-6 py-3 rounded-xl font-medium transition-all"
+                  className="px-6 py-3 rounded-full font-medium transition-all"
                   style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" }}>
                   Add First Ticket
                 </button>

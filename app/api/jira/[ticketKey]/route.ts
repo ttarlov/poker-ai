@@ -11,10 +11,33 @@ export async function GET(
   const debug = request.nextUrl.searchParams.get("debug") === "true";
 
   if (!baseUrl || !apiToken || !email) {
-    return NextResponse.json(
-      { error: "Jira credentials not configured" },
-      { status: 500 }
-    );
+    // Local mock mode — return realistic sample data
+    return NextResponse.json({
+      key: ticketKey,
+      title: `[Mock] ${ticketKey} — Implement retry logic for failed API calls`,
+      description:
+        "As a user, when an API call fails due to a transient error (timeout, 502, 503), " +
+        "the system should automatically retry up to 3 times with exponential backoff.\n\n" +
+        "Acceptance Criteria:\n" +
+        "• Retry on 502, 503, 504 and network timeout errors\n" +
+        "• Exponential backoff: 1s, 2s, 4s\n" +
+        "• Surface final error to user after all retries exhausted\n" +
+        "• Add retry count to observability logs",
+      summary:
+        "Add automatic retry with exponential backoff (1s/2s/4s) for transient API failures (502, 503, 504, timeouts). " +
+        "Max 3 attempts, then surface error. Log retry count for observability.",
+      issueType: "Story",
+      status: "To Do",
+      priority: "High",
+      assignee: "TestUser",
+      labels: ["backend", "reliability"],
+      url: `https://example.atlassian.net/browse/${ticketKey}`,
+      aiEstimate: "3",
+      aiReasoning:
+        "Based on the scope of retry logic with exponential backoff, this is a well-defined backend task. " +
+        "Similar retry implementations typically take 2-4 points. The acceptance criteria are clear and testable, " +
+        "but there's moderate complexity in handling edge cases around timeout detection and observability logging.",
+    });
   }
 
   if (!/^[A-Z][A-Z0-9]+-\d+$/.test(ticketKey)) {
@@ -24,10 +47,15 @@ export async function GET(
     );
   }
 
+  const aiEstimateField = process.env.JIRA_AI_ESTIMATE_FIELD;
+  const aiReasoningField = process.env.JIRA_AI_REASONING_FIELD;
+
   try {
     const auth = Buffer.from(`${email}:${apiToken}`).toString("base64");
+    const extraFields = [aiEstimateField, aiReasoningField].filter(Boolean).join(",");
+    const fieldsParam = "summary,description,issuetype,status,priority,assignee,labels,comment" + (extraFields ? "," + extraFields : "");
     const response = await fetch(
-      `${baseUrl}/rest/api/3/issue/${ticketKey}?fields=summary,description,issuetype,status,priority,assignee,labels,comment`,
+      `${baseUrl}/rest/api/3/issue/${ticketKey}?fields=${fieldsParam}`,
       {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -52,6 +80,16 @@ export async function GET(
     const comments = fields.comment?.comments || [];
     const pokerSummary = extractPokerSummary(comments);
 
+    // AI estimate: custom field takes priority over comment tag
+    const aiEstimate =
+      (aiEstimateField && fields[aiEstimateField] ? String(fields[aiEstimateField]).trim() : null)
+      || extractCommentTag(comments, "AI-ESTIMATE");
+
+    // AI reasoning: custom field takes priority over comment tag
+    const aiReasoning =
+      (aiReasoningField && fields[aiReasoningField] ? String(fields[aiReasoningField]).trim() : null)
+      || extractCommentTag(comments, "AI-REASONING");
+
     const result: any = {
       key: data.key,
       title: fields.summary || "",
@@ -63,6 +101,8 @@ export async function GET(
       assignee: fields.assignee?.displayName || null,
       labels: fields.labels || [],
       url: `${baseUrl}/browse/${data.key}`,
+      aiEstimate: aiEstimate || null,
+      aiReasoning: aiReasoning || null,
     };
 
     // Debug mode: include raw comment data to diagnose parsing issues
@@ -122,6 +162,42 @@ function extractPokerSummary(comments: any[]): string | null {
       }
       const summary = text.substring(endIndex).trim();
       if (summary) return summary;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Generic comment tag extractor — searches newest comments first for [TAG-NAME] content.
+ * Works for [AI-ESTIMATE], [AI-REASONING], or any future tags.
+ */
+function extractCommentTag(comments: any[], tagName: string): string | null {
+  const reversed = [...comments].reverse();
+  const tagUpper = tagName.toUpperCase();
+  const tagLower = tagName.toLowerCase();
+
+  for (const comment of reversed) {
+    const text = extractTextFromADF(comment.body);
+
+    // Try exact match: [TAG-NAME] content
+    const exactTag = `[${tagUpper}]`;
+    const exactIndex = text.indexOf(exactTag);
+    if (exactIndex !== -1) {
+      const content = text.substring(exactIndex + exactTag.length).trim();
+      if (content) return content;
+    }
+
+    // Try without brackets / case-insensitive
+    const lowerText = text.toLowerCase();
+    const ciIndex = lowerText.indexOf(tagLower);
+    if (ciIndex !== -1) {
+      let endIndex = ciIndex + tagLower.length;
+      while (endIndex < text.length && /[\[\]\s:—\-]/.test(text[endIndex])) {
+        endIndex++;
+      }
+      const content = text.substring(endIndex).trim();
+      if (content) return content;
     }
   }
 
