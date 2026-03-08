@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { useAuth } from "@/lib/auth-provider";
 import ParticipantList from "@/components/ParticipantList";
 import TicketQueue from "@/components/TicketQueue";
 import TicketForm from "@/components/TicketForm";
@@ -17,60 +18,24 @@ export default function SessionRoom() {
   const params = useParams();
   const roomCode = (params.room_code as string)?.toUpperCase();
   const { gameState, joinRoom, startVoting, roomError, loading, ready } = useStore();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [joined, setJoined] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [nameInput, setNameInput] = useState("");
-  const [autoJoining, setAutoJoining] = useState(true);
   const attemptedRef = useRef(false);
 
-  // Auto-rejoin on refresh OR show name prompt
+  const displayName = user?.user_metadata?.full_name || user?.email || "Player";
+
+  // Auto-join on mount with auth user's display name
   useEffect(() => {
-    if (!ready || attemptedRef.current) return;
+    if (!ready || authLoading || !user || attemptedRef.current) return;
     attemptedRef.current = true;
 
-    const sessionData = sessionStorage.getItem("pokerai_session_" + roomCode);
-    if (sessionData) {
-      try {
-        const parsed = JSON.parse(sessionData);
-        if (parsed.displayName) {
-          joinRoom(roomCode, parsed.displayName)
-            .then(() => {
-              setJoined(true);
-              setAutoJoining(false);
-            })
-            .catch(() => {
-              setAutoJoining(false);
-            });
-          return;
-        }
-      } catch (e) {
-        // ignore parse errors
-      }
-    }
+    joinRoom(roomCode, displayName);
+  }, [ready, authLoading, user, roomCode, displayName]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // No session data - show the prompt
-    setAutoJoining(false);
-    const cookies = document.cookie.split("; ");
-    const nameCookie = cookies.find(function(c) { return c.startsWith("pokerai_name="); });
-    if (nameCookie) setNameInput(decodeURIComponent(nameCookie.split("=")[1]));
-  }, [ready, roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleJoinRoom = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nameInput.trim()) return;
-    const name = nameInput.trim();
-    document.cookie = "pokerai_name=" + encodeURIComponent(name) + "; path=/; max-age=86400";
-    sessionStorage.setItem("pokerai_session_" + roomCode, JSON.stringify({ displayName: name }));
-    await joinRoom(roomCode, name);
-    setJoined(true);
-  };
-
-  const handleSignOut = () => {
-    document.cookie = "pokerai_name=; path=/; max-age=0";
-    sessionStorage.removeItem("pokerai_session_" + roomCode);
-    router.push("/");
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   const copyRoomLink = () => {
@@ -79,21 +44,6 @@ export default function SessionRoom() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const displayName = (() => {
-    if (typeof document === "undefined") return "";
-    try {
-      const sd = sessionStorage.getItem("pokerai_session_" + roomCode);
-      if (sd) {
-        const parsed = JSON.parse(sd);
-        if (parsed.displayName) return parsed.displayName;
-      }
-    } catch (e) {}
-    const cookies = document.cookie.split("; ");
-    const nameCookie = cookies.find(function(c) { return c.startsWith("pokerai_name="); });
-    if (nameCookie) return decodeURIComponent(nameCookie.split("=")[1]);
-    return "";
-  })();
 
   // Room error
   if (roomError) {
@@ -115,63 +65,15 @@ export default function SessionRoom() {
     );
   }
 
-  // Auto-rejoining after refresh
-  if (autoJoining) {
+  // Loading / connecting
+  if (authLoading || !ready || !gameState.sessionId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-3xl mb-3 animate-pulse-soft">🃏</div>
-          <p style={{ color: "var(--text-muted)" }}>Reconnecting to {roomCode}...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Join Prompt (fresh tab only)
-  if (!joined) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <h1 className="font-display text-3xl mb-2" style={{ color: "var(--text-primary)" }}>
-              Poker<span style={{ color: "var(--accent)" }}>AI</span>
-            </h1>
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Joining Room</span>
-              <span className="font-mono text-sm px-2 py-0.5 rounded"
-                    style={{ background: "var(--input-bg)", color: "var(--accent)", border: "1px solid var(--border-subtle)" }}>
-                {roomCode}
-              </span>
-            </div>
-          </div>
-          <form onSubmit={handleJoinRoom} className="space-y-5">
-            <div>
-              <label className="block text-xs mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Your Display Name</label>
-              <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
-                placeholder="Enter your name" maxLength={24} autoFocus
-                className="w-full px-4 py-3 rounded-full text-lg transition-all focus:outline-none"
-                style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
-                onFocus={e => { e.target.style.borderColor = "var(--input-focus-border)"; }}
-                onBlur={e => { e.target.style.borderColor = "var(--input-border)"; }} />
-            </div>
-            <button type="submit" disabled={!nameInput.trim() || loading}
-              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
-              style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
-              {loading ? "Joining..." : "Join the Table"}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading
-  if (!gameState.sessionId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-3xl mb-3 animate-pulse-soft">🃏</div>
-          <p style={{ color: "var(--text-muted)" }}>Loading room...</p>
+          <p style={{ color: "var(--text-muted)" }}>
+            {authLoading ? "Authenticating..." : "Joining room..."}
+          </p>
         </div>
       </div>
     );
