@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useEff
 import { supabase } from "./supabase";
 import { v4 as uuidv4 } from "uuid";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { useAuth } from "./auth-provider";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface Participant {
@@ -133,6 +134,7 @@ function saveJiraCacheToStorage(cache: Record<string, JiraCacheEntry>) {
 
 // ── Provider ──────────────────────────────────────────────────────────
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
@@ -153,14 +155,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Initialize participant ID and load Jira cache from sessionStorage
+  // Initialize participant ID from auth user or sessionStorage fallback
   useEffect(() => {
-    const key = "pokerai_pid";
-    let pid = sessionStorage.getItem(key);
-    if (!pid) {
-      pid = uuidv4();
-      sessionStorage.setItem(key, pid);
-    }
+    if (authLoading) return; // Wait for auth to resolve
+
+    // Use auth user ID if available, otherwise fall back to sessionStorage (mock mode)
+    const pid = user?.id ?? (() => {
+      const key = "pokerai_pid";
+      let stored = sessionStorage.getItem(key);
+      if (!stored) {
+        stored = uuidv4();
+        sessionStorage.setItem(key, stored);
+      }
+      return stored;
+    })();
+
     pidRef.current = pid;
     setMyParticipantId(pid);
 
@@ -168,7 +177,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setJiraCache(loadJiraCacheFromStorage());
 
     setReady(true);
-  }, []);
+  }, [authLoading, user]);
 
   // Periodic TTL cleanup (every 5 minutes)
   useEffect(() => {
