@@ -241,7 +241,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     ]);
 
     const tickets = ticketsRes.data || [];
-    const currentTicket = tickets.find(t => t.status === "voting" || t.status === "revealed");
+    const currentTicket = tickets.find((t: any) => t.status === "voting" || t.status === "revealed");
 
     const votesByTicket: Record<string, Vote[]> = {};
     for (const v of (votesRes.data || [])) {
@@ -269,7 +269,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }, () => {
         supabase.from("session_participants")
           .select("*").eq("session_id", sessionId).order("joined_at")
-          .then(({ data }) => {
+          .then(({ data }: { data: any }) => {
             if (data) setGameState(prev => ({ ...prev, participants: data }));
           });
       })
@@ -279,9 +279,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }, () => {
         supabase.from("tickets")
           .select("*").eq("session_id", sessionId).order("display_order")
-          .then(({ data }) => {
+          .then(({ data }: { data: any }) => {
             if (data) {
-              const currentTicket = data.find(t => t.status === "voting" || t.status === "revealed");
+              const currentTicket = data.find((t: any) => t.status === "voting" || t.status === "revealed");
               setGameState(prev => ({
                 ...prev,
                 tickets: data,
@@ -296,7 +296,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }, () => {
         supabase.from("votes")
           .select("*").eq("session_id", sessionId)
-          .then(({ data }) => {
+          .then(({ data }: { data: any }) => {
             if (data) {
               const votesByTicket: Record<string, Vote[]> = {};
               for (const v of data) {
