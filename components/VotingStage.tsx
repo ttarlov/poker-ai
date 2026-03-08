@@ -20,8 +20,11 @@ function closestPoint(avg: number): string {
 }
 
 export default function VotingStage() {
-  const { gameState, myParticipantId, startVoting, revealVotes, lockEstimate, revote } = useStore();
+  const { gameState, myParticipantId, startVoting, revealVotes, lockEstimate, revote, jiraCache } = useStore();
   const [selectedEstimate, setSelectedEstimate] = useState<string | null>(null);
+  const [aiRevealed, setAiRevealed] = useState(false);
+  const [aiReasoningOpen, setAiReasoningOpen] = useState(false);
+  const [aiNudgePlayed, setAiNudgePlayed] = useState(false);
 
   const currentTicket = gameState.tickets.find(t => t.id === gameState.currentTicketId);
   const nextPendingTicket = gameState.tickets.find(
@@ -29,6 +32,11 @@ export default function VotingStage() {
   );
 
   const ticketVotes = currentTicket ? (gameState.votes[currentTicket.id] || []) : [];
+
+  // AI estimate data from Jira cache
+  const jiraKey = currentTicket?.jira_key;
+  const aiEstimate = jiraKey ? jiraCache[jiraKey]?.data?.aiEstimate ?? null : null;
+  const aiReasoning = jiraKey ? jiraCache[jiraKey]?.data?.aiReasoning ?? null : null;
 
   const revealedData = useMemo(() => {
     if (!currentTicket || currentTicket.status !== "revealed") return null;
@@ -53,7 +61,17 @@ export default function VotingStage() {
 
   useEffect(() => {
     setSelectedEstimate(null);
+    setAiRevealed(false);
+    setAiReasoningOpen(false);
+    setAiNudgePlayed(false);
   }, [gameState.currentTicketId]);
+
+  // Nudge animation: 2s after AI card is revealed, wobble it to hint clickability
+  useEffect(() => {
+    if (!aiRevealed || aiNudgePlayed) return;
+    const timer = setTimeout(() => setAiNudgePlayed(true), 2000);
+    return () => clearTimeout(timer);
+  }, [aiRevealed, aiNudgePlayed]);
 
   if (!currentTicket && gameState.tickets.length > 0) {
     const firstPending = gameState.tickets.find(t => t.status === "pending");
@@ -62,7 +80,7 @@ export default function VotingStage() {
       <div className="flex-1 flex flex-col items-center justify-center py-12">
         <TicketDisplay ticket={firstPending} />
         <button onClick={() => startVoting(firstPending.id)}
-          className="mt-8 px-8 py-3 font-bold text-lg rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all"
+          className="mt-8 px-8 py-3 font-bold text-lg rounded-full hover:shadow-lg transition-all"
           style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
           Start Voting
         </button>
@@ -105,7 +123,7 @@ export default function VotingStage() {
           </div>
           <div className="flex justify-center">
             <button onClick={() => revealVotes(currentTicket.id)} disabled={ticketVotes.length === 0}
-              className="px-8 py-3 font-bold rounded-xl hover:shadow-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-8 py-3 font-bold rounded-full hover:shadow-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               style={{ background: "var(--accent-dark)", color: "var(--text-on-accent)" }}>
               Reveal Cards
             </button>
@@ -122,7 +140,7 @@ export default function VotingStage() {
                   style={{
                     background: "var(--card-face)",
                     borderColor: "color-mix(in srgb, var(--accent) 40%, transparent)",
-                    animationDelay: i * 80 + "ms",
+                    animationDelay: i * 30 + "ms",
                   }}>
                   <span className="font-display text-2xl font-bold" style={{ color: "var(--card-text)" }}>{v.value}</span>
                 </div>
@@ -150,6 +168,96 @@ export default function VotingStage() {
 
           {revealedData.votes.length > 0 && <VoteDistribution votes={revealedData.votes} />}
 
+          {/* AI Estimate Card — face-down → flip → nudge → click for reasoning overlay */}
+          {aiEstimate && (
+            <div className="flex flex-col items-center mt-6">
+              <div
+                className={"relative cursor-pointer" + (aiRevealed && aiNudgePlayed ? " animate-card-nudge" : "")}
+                style={{ perspective: "600px", width: "5rem", height: "7rem" }}
+                onClick={() => {
+                  if (!aiRevealed) setAiRevealed(true);
+                  else if (aiReasoning) setAiReasoningOpen(true);
+                }}
+              >
+                <div className={"card-inner" + (aiRevealed ? " flipped" : "")}>
+                  {/* Back face — face-down card */}
+                  <div
+                    className="card-front flex flex-col items-center justify-center border-2 shadow-lg"
+                    style={{ background: "var(--card-back)", borderColor: "color-mix(in srgb, var(--card-back) 70%, black)" }}
+                  >
+                    <span className="text-2xl">🤖</span>
+                  </div>
+                  {/* Front face — revealed estimate */}
+                  <div
+                    className="card-back flex flex-col items-center justify-center border-2 shadow-lg"
+                    style={{ background: "var(--card-face)", borderColor: "var(--card-back)" }}
+                  >
+                    <span className="text-lg mb-0.5">🤖</span>
+                    <span className="font-display text-2xl font-bold" style={{ color: "var(--card-text)" }}>
+                      {aiEstimate}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-medium mt-2" style={{ color: "var(--text-muted)" }}>
+                {aiRevealed ? "AI Estimate" : "Tap to reveal AI"}
+              </span>
+            </div>
+          )}
+
+          {/* AI Reasoning Overlay */}
+          {aiReasoningOpen && aiReasoning && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center animate-overlay-in"
+              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+              onClick={(e) => { if (e.target === e.currentTarget) setAiReasoningOpen(false); }}
+            >
+              <div
+                className="relative w-full max-w-lg mx-4 rounded-xl shadow-2xl"
+                style={{ background: "var(--bg-light)", border: "1px solid var(--border-medium)" }}
+              >
+                {/* Close button */}
+                <button
+                  onClick={() => setAiReasoningOpen(false)}
+                  className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold transition-all hover:scale-110"
+                  style={{
+                    background: "var(--input-bg)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-medium)",
+                  }}
+                >
+                  ✕
+                </button>
+
+                {/* Header */}
+                <div className="px-6 pt-5 pb-3 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span className="text-2xl">🤖</span>
+                  <div>
+                    <h3 className="font-display text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+                      AI Reasoning
+                    </h3>
+                    <span className="font-mono text-sm px-2 py-0.5 rounded" style={{
+                      background: "color-mix(in srgb, var(--card-back) 12%, transparent)",
+                      color: "var(--card-back)",
+                    }}>
+                      Estimate: {aiEstimate}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Reasoning body */}
+                <div
+                  className="px-6 py-5 max-h-[60vh] overflow-y-auto"
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}
+                >
+                  <p className="text-base leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
+                    {aiReasoning}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col items-center gap-4 mt-6">
             <div className="flex flex-wrap items-center justify-center gap-2">
               <span className="text-sm mr-2" style={{ color: "var(--text-secondary)" }}>Lock estimate:</span>
@@ -167,7 +275,7 @@ export default function VotingStage() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => revote(currentTicket.id)}
-                className="px-6 py-2.5 rounded-xl text-sm transition-all"
+                className="px-6 py-2.5 rounded-full text-sm transition-all"
                 style={{ color: "var(--btn-danger-text)", border: "1px solid var(--btn-danger-border)" }}>
                 Re-vote
               </button>
@@ -179,7 +287,7 @@ export default function VotingStage() {
                   }
                 }}
                 disabled={!selectedEstimate}
-                className="px-6 py-2.5 font-bold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+                className="px-6 py-2.5 font-bold rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
                 style={{ background: "var(--status-active)", color: "var(--bg-dark)" }}>
                 Lock It →
               </button>
@@ -190,7 +298,7 @@ export default function VotingStage() {
 
       {currentTicket.status === "complete" && (
         <div className="mt-8 text-center animate-fade-in">
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl"
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-sm"
                style={{ background: "color-mix(in srgb, var(--status-active) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--status-active) 30%, transparent)" }}>
             <span style={{ color: "var(--status-active)" }}>✓</span>
             <span style={{ color: "var(--text-primary)" }}>
@@ -200,7 +308,7 @@ export default function VotingStage() {
           {nextPendingTicket && (
             <div className="mt-6">
               <button onClick={() => startVoting(nextPendingTicket.id)}
-                className="px-6 py-3 font-bold rounded-xl hover:shadow-lg transition-all"
+                className="px-6 py-3 font-bold rounded-full hover:shadow-lg transition-all"
                 style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
                 Next: {nextPendingTicket.title}
               </button>
@@ -249,7 +357,7 @@ function TicketDisplay({ ticket }: { ticket: any }) {
   const b = badges[ticket.status] || badges.pending;
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
+    <div className="rounded-sm shadow-sm p-6" style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -282,7 +390,7 @@ function TicketDisplay({ ticket }: { ticket: any }) {
 
           {/* Poker Summary — scrollable */}
           {jiraSummary && (
-            <div className="mt-3 p-3 rounded-xl" style={{ background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 15%, transparent)" }}>
+            <div className="mt-3 p-3 rounded-sm" style={{ background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 15%, transparent)" }}>
               <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>📋 Summary</span>
               <div className="mt-1 max-h-32 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--border-medium) transparent" }}>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>{jiraSummary}</p>
@@ -339,7 +447,7 @@ function VoteDistribution({ votes }: { votes: { value: string; displayName: stri
         })
         .map(([value, count]) => (
           <div key={value} className="flex flex-col items-center gap-1">
-            <div className="w-12 rounded-t-lg transition-all duration-500"
+            <div className="w-12 rounded-t-sm transition-all duration-500"
                  style={{ height: (count / max) * 60 + 16 + "px", background: "linear-gradient(to top, var(--vote-bar-from), var(--vote-bar-to))" }} />
             <span className="font-mono text-sm" style={{ color: "var(--accent)" }}>{value}</span>
             <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>x{count}</span>

@@ -33,7 +33,7 @@ export default function PointsSummary() {
   if (completedTickets.length === 0) return null;
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
+    <div className="rounded-sm shadow-sm overflow-hidden" style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 transition-all"
@@ -68,7 +68,7 @@ export default function PointsSummary() {
               </div>
               <div className="space-y-1">
                 {owner.tickets.map(ticket => (
-                  <div key={ticket.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                  <div key={ticket.id} className="flex items-center justify-between px-3 py-1.5 rounded-sm text-sm"
                        style={{ background: "color-mix(in srgb, var(--bg-dark) 50%, transparent)" }}>
                     <span className="truncate mr-3" style={{ color: "var(--text-secondary)" }}>{ticket.title}</span>
                     <span className="font-mono shrink-0" style={{ color: "var(--accent)" }}>{ticket.final_estimate}</span>

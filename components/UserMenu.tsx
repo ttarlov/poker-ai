@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useTheme } from "@/lib/theme-provider";
+import themes, { themeKeys } from "@/lib/themes";
 
 interface Props {
   displayName: string;
@@ -10,6 +12,7 @@ interface Props {
 export default function UserMenu({ displayName, onSignOut }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { themeKey, setTheme } = useTheme();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -27,7 +30,7 @@ export default function UserMenu({ displayName, onSignOut }: Props) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all hover:opacity-80"
+        className="flex items-center gap-2 px-2 py-1.5 rounded-full text-xs transition-all hover:opacity-80"
         style={{
           background: "var(--input-bg)",
           border: "1px solid var(--border-subtle)",
@@ -46,7 +49,7 @@ export default function UserMenu({ displayName, onSignOut }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-2xl z-50
+        <div className="absolute right-0 top-full mt-2 w-52 rounded-sm shadow-2xl z-50
                         overflow-hidden animate-slide-up"
              style={{
                background: "var(--bg-light)",
@@ -62,11 +65,50 @@ export default function UserMenu({ displayName, onSignOut }: Props) {
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Theme switcher */}
+          <div className="px-3 pt-2.5 pb-1.5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+            <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
+                 style={{ color: "var(--text-muted)" }}>
+              Theme
+            </div>
+            <div className="space-y-0.5">
+              {themeKeys.map(key => {
+                const t = themes[key];
+                const active = key === themeKey;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setTheme(key)}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm text-left text-xs transition-all"
+                    style={{
+                      background: active ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "transparent",
+                      color: active ? "var(--accent)" : "var(--text-primary)",
+                    }}
+                    onMouseEnter={e => {
+                      if (!active) e.currentTarget.style.background = "var(--input-bg)";
+                    }}
+                    onMouseLeave={e => {
+                      if (!active) e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <span className="text-sm">{t.emoji}</span>
+                    <span className="flex-1 font-medium">{t.name}</span>
+                    <div className="flex gap-0.5">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.bg, border: `1px solid ${t.borderMedium}` }} />
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.accent }} />
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.cardBack }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Sign out */}
           <div className="p-1.5">
             <button
               onClick={() => { setOpen(false); onSignOut(); }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left text-sm transition-all"
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-sm text-left text-sm transition-all"
               style={{ color: "var(--btn-danger-text)" }}
               onMouseEnter={e => (e.currentTarget.style.background = "var(--input-bg)")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}

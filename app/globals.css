@@ -2,66 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg: #0d4a2e;
-  --bg-light: #11593a;
-  --bg-dark: #0a3d25;
-  --bg-glow1: rgba(17, 89, 58, 0.6);
-  --bg-glow2: rgba(10, 61, 37, 0.4);
-  --bg-glow3: rgba(13, 74, 46, 0.3);
-  --accent: #d4a843;
-  --accent-light: #e0bd6a;
-  --accent-dark: #b8922e;
-  --text-primary: #f5f0e8;
-  --text-secondary: rgba(134, 239, 172, 0.5);
-  --text-muted: #059669;
-  --text-on-accent: #0a3d25;
-  --card-face: #f5f0e8;
-  --card-back: #1a3a5c;
-  --card-text: #0a3d25;
-  --border-subtle: rgba(5, 150, 105, 0.2);
-  --border-medium: rgba(5, 150, 105, 0.3);
-  --status-active: #4ade80;
-  --input-bg: rgba(0,0,0,0.3);
-  --input-border: rgba(5, 150, 105, 0.3);
-  --input-focus-border: rgba(212, 168, 67, 0.4);
-  --overlay-bg: rgba(0,0,0,0.6);
-  --header-bg: rgba(0,0,0,0.2);
-  --header-border: rgba(5, 150, 105, 0.2);
-  --vote-bar-from: #b8922e;
-  --vote-bar-to: #d4a843;
-  --voted-card-bg: #1a3a5c;
-  --voted-card-border: rgba(96, 165, 250, 0.5);
-  --unvoted-bg: rgba(0,0,0,0.2);
-  --unvoted-border: rgba(5, 150, 105, 0.2);
-  --btn-primary-from: #b8922e;
-  --btn-primary-to: #e0bd6a;
-  --btn-primary-text: #0a3d25;
-  --btn-secondary-bg: rgba(5, 150, 105, 0.25);
-  --btn-secondary-text: #86efac;
-  --btn-secondary-border: rgba(5, 150, 105, 0.3);
-  --btn-danger-text: #fcd34d;
-  --btn-danger-border: rgba(217, 119, 6, 0.3);
-  --red-suit: #f87171;
+  --bg: #F8F2E9;
+  --bg-light: #FFFFFF;
+  --bg-dark: #F0E8DB;
+  --bg-glow1: transparent;
+  --bg-glow2: transparent;
+  --bg-glow3: transparent;
+  --accent: #E7651C;
+  --accent-light: #F07D3A;
+  --accent-dark: #C85516;
+  --text-primary: #000000;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
+  --text-on-accent: #FFFFFF;
+  --card-face: #FFFFFF;
+  --card-back: #063347;
+  --card-text: #000000;
+  --border-subtle: #E5E7EB;
+  --border-medium: #D8D8D8;
+  --status-active: #16a34a;
+  --input-bg: #FFFFFF;
+  --input-border: #D8D8D8;
+  --input-focus-border: #E7651C;
+  --overlay-bg: rgba(0,0,0,0.4);
+  --header-bg: rgba(255,255,255,0.95);
+  --header-border: #D8D8D8;
+  --vote-bar-from: #E7651C;
+  --vote-bar-to: #F07D3A;
+  --voted-card-bg: #063347;
+  --voted-card-border: rgba(6, 51, 71, 0.5);
+  --unvoted-bg: #F0E8DB;
+  --unvoted-border: #D8D8D8;
+  --btn-primary-from: #E7651C;
+  --btn-primary-to: #E7651C;
+  --btn-primary-text: #FFFFFF;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #E7651C;
+  --btn-secondary-border: #E7651C;
+  --btn-danger-text: #dc2626;
+  --btn-danger-border: rgba(220, 38, 38, 0.3);
+  --red-suit: #dc2626;
 }
 
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  background: var(--bg-dark);
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
   color: var(--text-primary);
   overflow-x: hidden;
 }
 
 .felt-bg {
-  background:
-    radial-gradient(ellipse at 50% 0%, var(--bg-glow1) 0%, transparent 70%),
-    radial-gradient(circle at 20% 80%, var(--bg-glow2) 0%, transparent 50%),
-    radial-gradient(circle at 80% 60%, var(--bg-glow3) 0%, transparent 50%),
-    var(--bg-dark);
+  background: var(--bg);
   min-height: 100vh;
 }
 
@@ -86,12 +82,30 @@ body {
 
 .animate-slide-up { animation: slideUp 0.3s ease-out; }
 .animate-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
-.animate-fade-in { animation: fadeIn 0.4s ease-out; }
-.animate-bounce-in { animation: bounceIn 0.5s ease-out; }
+.animate-fade-in { animation: fadeIn 0.1s ease-out; }
+.animate-bounce-in { animation: bounceIn 0.2s ease-out; }
+
+/* AI card nudge — subtle wobble to hint clickability */
+@keyframes cardNudge {
+  0%, 100% { transform: rotateY(0deg); }
+  25% { transform: rotateY(15deg); }
+  75% { transform: rotateY(-15deg); }
+}
+.animate-card-nudge {
+  animation: cardNudge 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+/* AI reasoning overlay entrance */
+@keyframes overlayIn {
+  0% { opacity: 0; backdrop-filter: blur(0px); }
+  100% { opacity: 1; backdrop-filter: blur(8px); }
+}
+.animate-overlay-in { animation: overlayIn 0.3s ease-out forwards; }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 3px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
 
 /* ── Matrix Rain ──────────────────────────── */
 .theme-matrix .felt-bg::before {

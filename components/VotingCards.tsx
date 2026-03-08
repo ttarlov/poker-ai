@@ -34,7 +34,7 @@ export default function VotingCards({ ticketId }: { ticketId: string }) {
 
   return (
     <div className="sticky bottom-0 pt-8 pb-5 px-4 backdrop-blur-sm"
-         style={{ background: "linear-gradient(to top, var(--bg-dark), color-mix(in srgb, var(--bg-dark) 80%, transparent), transparent)" }}>
+         style={{ background: "linear-gradient(to top, var(--bg), color-mix(in srgb, var(--bg) 80%, transparent), transparent)" }}>
       <div className="max-w-3xl mx-auto">
         <div className="flex items-end justify-center gap-2 sm:gap-3">
           {CARDS.map((card) => {

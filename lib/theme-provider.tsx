@@ -76,7 +76,7 @@ function applyTheme(t: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeKey, setThemeKey] = useState("felt");
+  const [themeKey, setThemeKey] = useState("guild");
 
   useEffect(() => {
     const saved = document.cookie
@@ -87,7 +87,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setThemeKey(saved);
       applyTheme(themes[saved]);
     } else {
-      applyTheme(themes.felt);
+      applyTheme(themes.guild);
     }
   }, []);
 
