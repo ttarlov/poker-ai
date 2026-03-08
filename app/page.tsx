@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useAuth } from "@/lib/auth-provider";
@@ -21,17 +21,37 @@ function HomeContent() {
   const [mode, setMode] = useState<"home" | "create" | "join">("home");
   const [sessionName, setSessionName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [guestNameInput, setGuestNameInput] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { createRoom, checkRoom } = useStore();
-  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const {
+    user, loading: authLoading, signInWithGoogle, signOut,
+    isGuest, guestName, displayName, continueAsGuest, clearGuest,
+  } = useAuth();
 
   const redirectTo = searchParams.get("redirect");
+  const hasIdentity = !!user || isGuest;
+  const avatarUrl = user?.user_metadata?.avatar_url;
+
+  // Auto-redirect when identity is established and redirect param exists
+  useEffect(() => {
+    if (!authLoading && hasIdentity && redirectTo) {
+      router.push(redirectTo);
+    }
+  }, [authLoading, hasIdentity, redirectTo, router]);
 
   const handleSignIn = () => {
     signInWithGoogle(redirectTo || undefined);
+  };
+
+  const handleGuestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = guestNameInput.trim();
+    if (!name) return;
+    continueAsGuest(name);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -72,9 +92,6 @@ function HomeContent() {
     return clean;
   };
 
-  const displayName = user?.user_metadata?.full_name || user?.email || "Player";
-  const avatarUrl = user?.user_metadata?.avatar_url;
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -106,8 +123,8 @@ function HomeContent() {
           </div>
         )}
 
-        {/* Unauthenticated: Sign in with Google */}
-        {!authLoading && !user && (
+        {/* No identity: Sign in or Continue as Guest */}
+        {!authLoading && !hasIdentity && (
           <div className="space-y-4 animate-fade-in">
             <button onClick={handleSignIn}
               className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-3"
@@ -120,18 +137,46 @@ function HomeContent() {
               </svg>
               Sign in with Google
             </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
+              <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>or</span>
+              <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
+            </div>
+
+            <form onSubmit={handleGuestSubmit} className="space-y-3">
+              <input
+                type="text"
+                value={guestNameInput}
+                onChange={e => setGuestNameInput(e.target.value)}
+                placeholder="Enter your name"
+                maxLength={24}
+                className="w-full px-4 py-3 rounded-full text-center transition-all focus:outline-none"
+                style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
+                onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
+                onBlur={e => e.target.style.borderColor = "var(--input-border)"}
+              />
+              <button
+                type="submit"
+                disabled={!guestNameInput.trim()}
+                className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
+                Continue as Guest
+              </button>
+            </form>
+
             {redirectTo && (
               <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                Sign in to join the session
+                Sign in or enter your name to join the session
               </p>
             )}
           </div>
         )}
 
-        {/* Authenticated: User info + Room actions */}
-        {!authLoading && user && (
+        {/* Has identity (auth or guest): Identity bar + Room actions */}
+        {!authLoading && hasIdentity && (
           <>
-            {/* User identity bar */}
+            {/* Identity bar */}
             <div className="flex items-center justify-center gap-3 mb-8 py-3 px-4 rounded-full"
                  style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
               {avatarUrl ? (
@@ -143,11 +188,19 @@ function HomeContent() {
                 </div>
               )}
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{displayName}</span>
-              <button onClick={() => signOut()}
-                className="text-xs ml-auto transition-all hover:opacity-70"
-                style={{ color: "var(--text-muted)" }}>
-                Sign out
-              </button>
+              {user ? (
+                <button onClick={() => signOut()}
+                  className="text-xs ml-auto transition-all hover:opacity-70"
+                  style={{ color: "var(--text-muted)" }}>
+                  Sign out
+                </button>
+              ) : (
+                <button onClick={() => clearGuest()}
+                  className="text-xs ml-auto transition-all hover:opacity-70"
+                  style={{ color: "var(--text-muted)" }}>
+                  Change
+                </button>
+              )}
             </div>
 
             {mode === "home" && (

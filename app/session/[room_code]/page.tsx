@@ -18,21 +18,25 @@ export default function SessionRoom() {
   const params = useParams();
   const roomCode = (params.room_code as string)?.toUpperCase();
   const { gameState, joinRoom, startVoting, roomError, loading, ready } = useStore();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const {
+    user, loading: authLoading, signOut, signInWithGoogle,
+    isGuest, displayName, continueAsGuest,
+  } = useAuth();
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [nameInput, setNameInput] = useState("");
   const attemptedRef = useRef(false);
 
-  const displayName = user?.user_metadata?.full_name || user?.email || "Player";
+  const hasIdentity = !!user || isGuest;
 
-  // Auto-join on mount with auth user's display name
+  // Auto-join on mount when identity is established
   useEffect(() => {
-    if (!ready || authLoading || !user || attemptedRef.current) return;
+    if (!ready || authLoading || !hasIdentity || attemptedRef.current) return;
     attemptedRef.current = true;
 
-    joinRoom(roomCode, displayName);
-  }, [ready, authLoading, user, roomCode, displayName]); // eslint-disable-line react-hooks/exhaustive-deps
+    joinRoom(roomCode, displayName || "Player");
+  }, [ready, authLoading, hasIdentity, roomCode, displayName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSignOut = async () => {
     await signOut();
@@ -59,6 +63,40 @@ export default function SessionRoom() {
             className="px-6 py-3 font-bold rounded-full transition-all"
             style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
             Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Guest name prompt — direct link with no identity
+  if (!authLoading && !hasIdentity) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <h2 className="font-display text-2xl mb-2" style={{ color: "var(--text-primary)" }}>
+            Join as Guest
+          </h2>
+          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+            Enter your name to join room <span className="font-mono" style={{ color: "var(--accent)" }}>{roomCode}</span>
+          </p>
+          <form onSubmit={(e) => { e.preventDefault(); if (nameInput.trim()) continueAsGuest(nameInput.trim()); }}>
+            <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
+              placeholder="Your name" maxLength={24} autoFocus
+              className="w-full px-4 py-3 rounded-full text-center transition-all focus:outline-none mb-4"
+              style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
+              onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
+              onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
+            <button type="submit" disabled={!nameInput.trim()}
+              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+              style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
+              Join Room
+            </button>
+          </form>
+          <button onClick={() => signInWithGoogle(`/session/${roomCode}`)}
+            className="mt-4 text-sm transition-all hover:opacity-70"
+            style={{ color: "var(--text-secondary)" }}>
+            or sign in with Google
           </button>
         </div>
       </div>
@@ -120,7 +158,12 @@ export default function SessionRoom() {
           </div>
           <div className="flex items-center gap-2">
             <ParticipantList participants={gameState.participants} />
-            <UserMenu displayName={displayName} onSignOut={handleSignOut} />
+            <UserMenu
+              displayName={displayName}
+              isGuest={isGuest}
+              onSignOut={handleSignOut}
+              onSignIn={() => signInWithGoogle(`/session/${roomCode}`)}
+            />
           </div>
         </div>
       </header>

@@ -11,18 +11,8 @@ export async function middleware(request: NextRequest) {
 
   const { supabase, response } = createClient(request);
 
-  // Refresh session tokens (the key purpose of this middleware)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Protected routes: /session/* requires authentication
-  const url = request.nextUrl;
-  if (url.pathname.startsWith("/session/") && !user) {
-    const redirectUrl = new URL("/", request.url);
-    redirectUrl.searchParams.set("redirect", url.pathname);
-    return NextResponse.redirect(redirectUrl);
-  }
+  // Refresh session tokens for authenticated users (no-op if not signed in)
+  await supabase.auth.getUser();
 
   return response;
 }
