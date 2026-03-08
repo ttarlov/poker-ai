@@ -17,13 +17,13 @@ type ChangeListener = { table: string; callback: () => void };
 const activeChannels = new Map<string, ChangeListener[]>();
 
 function notifyListeners(table: string) {
-  for (const [, listeners] of activeChannels) {
-    for (const listener of listeners) {
+  activeChannels.forEach((listeners) => {
+    listeners.forEach((listener) => {
       if (listener.table === table) {
         listener.callback();
       }
-    }
-  }
+    });
+  });
 }
 
 // ── Room code generator ───────────────────────────────────────────────
