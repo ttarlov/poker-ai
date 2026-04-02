@@ -159,13 +159,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (authLoading) return; // Wait for auth to resolve
 
-    // Use auth user ID if available, otherwise fall back to sessionStorage (mock mode)
+    // Use auth user ID if available, otherwise fall back to localStorage (guests)
     const pid = user?.id ?? (() => {
-      const key = "pokerai_pid";
-      let stored = sessionStorage.getItem(key);
+      const key = "pokerai_guest_pid";
+      let stored = localStorage.getItem(key);
       if (!stored) {
         stored = uuidv4();
-        sessionStorage.setItem(key, stored);
+        localStorage.setItem(key, stored);
       }
       return stored;
     })();
