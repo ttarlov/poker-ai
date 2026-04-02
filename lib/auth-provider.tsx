@@ -83,7 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearGuest = () => {
-    try { localStorage.removeItem(GUEST_NAME_KEY); } catch {}
+    try {
+      localStorage.removeItem(GUEST_NAME_KEY);
+      localStorage.removeItem("pokerai_guest_pid");
+    } catch {}
     setGuestName(null);
   };
 
