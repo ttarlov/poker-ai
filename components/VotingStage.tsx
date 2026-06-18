@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
+import NuclearConsensus from "./NuclearConsensus";
 
 const POINT_SCALE = ["0.5", "1", "2", "3", "4", "5"];
 
@@ -25,6 +26,9 @@ export default function VotingStage() {
   const [aiRevealed, setAiRevealed] = useState(false);
   const [aiReasoningOpen, setAiReasoningOpen] = useState(false);
   const [aiNudgePlayed, setAiNudgePlayed] = useState(false);
+  const [showNuke, setShowNuke] = useState(false);
+  // Tracks the last ticket we celebrated so consensus only detonates once per reveal.
+  const nukedTicketRef = useRef<string | null>(null);
 
   const currentTicket = gameState.tickets.find(t => t.id === gameState.currentTicketId);
   const nextPendingTicket = gameState.tickets.find(
@@ -66,6 +70,25 @@ export default function VotingStage() {
     setAiNudgePlayed(false);
   }, [gameState.currentTicketId]);
 
+  // Consensus = every revealed vote is identical, with at least two voters.
+  const hasConsensus = !!revealedData
+    && revealedData.votes.length >= 2
+    && revealedData.votes.every(v => v.value === revealedData.votes[0].value);
+
+  // Detonate the nuclear celebration once when consensus is first revealed.
+  // Each client computes this from the same realtime state, so it fires in sync
+  // for every participant. Re-voting a ticket re-arms it.
+  useEffect(() => {
+    if (currentTicket?.status === "voting") {
+      nukedTicketRef.current = null;
+      return;
+    }
+    if (currentTicket && hasConsensus && nukedTicketRef.current !== currentTicket.id) {
+      nukedTicketRef.current = currentTicket.id;
+      setShowNuke(true);
+    }
+  }, [currentTicket?.id, currentTicket?.status, hasConsensus]);
+
   // Nudge animation: 2s after AI card is revealed, wobble it to hint clickability
   useEffect(() => {
     if (!aiRevealed || aiNudgePlayed) return;
@@ -93,6 +116,7 @@ export default function VotingStage() {
 
   return (
     <div className="flex-1 flex flex-col">
+      {showNuke && <NuclearConsensus onDone={() => setShowNuke(false)} />}
       <TicketDisplay ticket={currentTicket} />
 
       {currentTicket.status === "voting" && (

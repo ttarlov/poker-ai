@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useAuth } from "@/lib/auth-provider";
 import ParticipantList from "@/components/ParticipantList";
@@ -12,6 +12,7 @@ import VotingCards from "@/components/VotingCards";
 import SessionSummary from "@/components/SessionSummary";
 import PointsSummary from "@/components/PointsSummary";
 import UserMenu from "@/components/UserMenu";
+import NuclearConsensus from "@/components/NuclearConsensus";
 
 export default function SessionRoom() {
   const router = useRouter();
@@ -27,8 +28,31 @@ export default function SessionRoom() {
   const [copied, setCopied] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const attemptedRef = useRef(false);
+  const searchParams = useSearchParams();
 
   const hasIdentity = !!user || isGuest;
+
+  // ── Opt-in preview of the consensus celebration ──────────────────────
+  // Lets you eyeball the animation without orchestrating a real unanimous
+  // vote: load the session with ?nuke=1, or press "n". Off unless the
+  // NEXT_PUBLIC_NUKE_PREVIEW flag is set, so it never fires in real prod.
+  const previewEnabled = process.env.NEXT_PUBLIC_NUKE_PREVIEW === "1";
+  const [previewNuke, setPreviewNuke] = useState(false);
+
+  useEffect(() => {
+    if (previewEnabled && searchParams.get("nuke") === "1") setPreviewNuke(true);
+  }, [previewEnabled, searchParams]);
+
+  useEffect(() => {
+    if (!previewEnabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "n" || e.key === "N") setPreviewNuke(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [previewEnabled]);
 
   // Auto-join on mount when identity is established
   useEffect(() => {
@@ -123,6 +147,7 @@ export default function SessionRoom() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {previewEnabled && previewNuke && <NuclearConsensus onDone={() => setPreviewNuke(false)} />}
       <header className="backdrop-blur-sm"
               style={{ borderBottom: "1px solid var(--header-border)", background: "var(--header-bg)" }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
