@@ -7,7 +7,7 @@ import { useEffect } from "react";
 // mushroom cloud fades in. Total runtime is ~4s, after which onDone unmounts it.
 export default function NuclearConsensus({ onDone }: { onDone: () => void }) {
   useEffect(() => {
-    const timer = setTimeout(onDone, 4000);
+    const timer = setTimeout(onDone, 5000);
     return () => clearTimeout(timer);
   }, [onDone]);
 
@@ -32,8 +32,8 @@ export default function NuclearConsensus({ onDone }: { onDone: () => void }) {
 function MushroomCloud() {
   return (
     <svg
-      width="320"
-      height="400"
+      width="460"
+      height="575"
       viewBox="0 0 400 500"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
