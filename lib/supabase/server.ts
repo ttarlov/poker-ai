@@ -6,10 +6,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const isLocalMock = supabaseUrl === "http://localhost:mock";
 
-export function createClient() {
+export async function createClient() {
   if (isLocalMock) return createMockClient() as any;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
