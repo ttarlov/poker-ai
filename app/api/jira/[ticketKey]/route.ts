@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { ticketKey: string } }
+  { params }: { params: Promise<{ ticketKey: string }> }
 ) {
-  const ticketKey = params.ticketKey.toUpperCase();
+  const { ticketKey: rawKey } = await params;
+  const ticketKey = rawKey.toUpperCase();
   const baseUrl = process.env.JIRA_BASE_URL;
   const apiToken = process.env.JIRA_API_TOKEN;
   const email = process.env.JIRA_EMAIL;
