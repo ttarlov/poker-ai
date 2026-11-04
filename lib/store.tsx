@@ -84,6 +84,8 @@ const DEFAULT_ROOMS_URL = "https://poker-rooms.pointing-poker.workers.dev";
 const ROOMS_URL = (process.env.NEXT_PUBLIC_ROOMS_URL || DEFAULT_ROOMS_URL).replace(/\/$/, "");
 const ROOMS_WS_URL = ROOMS_URL.replace(/^http/, "ws");
 
+// Jira import needs server-side Jira credentials; off unless explicitly enabled.
+const JIRA_ENABLED = process.env.NEXT_PUBLIC_JIRA_ENABLED === "1";
 const JIRA_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 const JIRA_CACHE_STORAGE_KEY = "pokerai_jira_cache";
 
@@ -157,6 +159,7 @@ function pruneRoomCache() {
 }
 
 function loadJiraCacheFromStorage(): Record<string, JiraCacheEntry> {
+  if (!JIRA_ENABLED) return {};
   const parsed = readJson<Record<string, JiraCacheEntry>>(sessionStorage, JIRA_CACHE_STORAGE_KEY) ?? {};
   const now = Date.now();
   const valid: Record<string, JiraCacheEntry> = {};
@@ -257,6 +260,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchJiraData = useCallback(async (jiraKey: string): Promise<JiraData | null> => {
+    if (!JIRA_ENABLED) return null;
     const key = jiraKey.toUpperCase();
     const cached = jiraCache[key];
     if (cached && Date.now() - cached.fetchedAt < JIRA_CACHE_TTL) return cached.data;

@@ -1,5 +1,6 @@
 import { ROOM_CODE_PATTERN } from "../../shared/room-protocol";
 import { Room, type Env } from "./room";
+import { handleSlack } from "./slack";
 
 export { Room };
 
@@ -7,9 +8,14 @@ export { Room };
 //   GET /rooms/:code          WebSocket upgrade into that room's Durable Object
 //   GET /rooms/:code/exists   { exists, name?, code? } (CORS-enabled)
 //   GET /health               liveness check
+//   /slack/*                  Slack slash command + install (see slack.ts)
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    // Slack calls are server-to-server and signed; they skip the browser origin checks.
+    if (url.pathname.startsWith("/slack/")) return handleSlack(request, env, url);
+
     const origin = request.headers.get("Origin");
     const originOk = !origin || originAllowed(origin, env.ALLOWED_ORIGINS);
     const cors: Record<string, string> = origin && originOk

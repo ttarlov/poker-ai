@@ -38,6 +38,17 @@ export interface Env {
   ROOM: DurableObjectNamespace<Room>;
   ALLOWED_ORIGINS: string;
   CONNECT_LIMITER?: RateLimit;
+  APP_URL?: string;
+  SLACK_CLIENT_ID?: string;
+  SLACK_CLIENT_SECRET?: string;
+  SLACK_SIGNING_SECRET?: string;
+}
+
+// A ticket handed to a room at creation time (from the Slack slash command).
+export interface SeedTicket {
+  title: string;
+  jiraKey?: string;
+  externalUrl?: string;
 }
 
 // Per-connection message budget: a burst of this many, refilled continuously.
@@ -76,6 +87,38 @@ export class Room extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: client });
   }
 
+  // RPC from the Worker: create this room with an optional ticket already open for
+  // voting. Returns false if the room already exists (the caller picks another code).
+  async createSeeded(code: string, roomName: string, seed: SeedTicket | null): Promise<boolean> {
+    if (this.room) return false;
+    const room: StoredRoom = {
+      code,
+      name: str(roomName, LIMITS.roomName).trim() || "Planning Session",
+      createdAt: new Date().toISOString(),
+      participants: {},
+      tickets: [],
+      currentTicketId: null,
+      votes: {},
+    };
+    const title = seed ? str(seed.title, LIMITS.title).trim() : "";
+    if (seed && title) {
+      const ticket = newTicket(room, {
+        title,
+        description: "",
+        createdBy: null,
+        jiraKey: seed.jiraKey ? str(seed.jiraKey, LIMITS.jiraKey) : null,
+        externalUrl: seed.externalUrl ? str(seed.externalUrl, LIMITS.url) : null,
+      });
+      ticket.status = "voting";
+      room.tickets.push(ticket);
+      room.votes[ticket.id] = {};
+      room.currentTicketId = ticket.id;
+    }
+    this.room = room;
+    await this.save();
+    return true;
+  }
+
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
     if (!this.takeToken(ws)) {
       this.sendError(ws, "bad_request", "Slow down");
@@ -108,17 +151,13 @@ export class Room extends DurableObject<Env> {
         const title = str(msg.title, LIMITS.title).trim();
         if (!title) return this.sendError(ws, "bad_request", "Ticket title is required");
         if (room.tickets.length >= LIMITS.tickets) return this.sendError(ws, "bad_request", "Ticket limit reached");
-        room.tickets.push({
-          id: crypto.randomUUID(),
+        room.tickets.push(newTicket(room, {
           title,
           description: str(msg.description, LIMITS.description),
-          status: "pending",
-          final_estimate: null,
-          display_order: room.tickets.length,
-          created_by: pid,
-          jira_key: msg.jiraKey ? str(msg.jiraKey, LIMITS.jiraKey) : null,
-          external_url: msg.externalUrl ? str(msg.externalUrl, LIMITS.url) : null,
-        });
+          createdBy: pid,
+          jiraKey: msg.jiraKey ? str(msg.jiraKey, LIMITS.jiraKey) : null,
+          externalUrl: msg.externalUrl ? str(msg.externalUrl, LIMITS.url) : null,
+        }));
         break;
       }
       case "startVoting": {
@@ -339,6 +378,23 @@ export class Room extends DurableObject<Env> {
   private sendError(ws: WebSocket, code: Extract<ServerMessage, { t: "error" }>["code"], message: string) {
     this.send(ws, { t: "error", code, message });
   }
+}
+
+function newTicket(
+  room: StoredRoom,
+  t: { title: string; description: string; createdBy: string | null; jiraKey: string | null; externalUrl: string | null },
+): Ticket {
+  return {
+    id: crypto.randomUUID(),
+    title: t.title,
+    description: t.description,
+    status: "pending",
+    final_estimate: null,
+    display_order: room.tickets.length,
+    created_by: t.createdBy,
+    jira_key: t.jiraKey,
+    external_url: t.externalUrl,
+  };
 }
 
 function str(value: unknown, max: number): string {

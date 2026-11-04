@@ -1,0 +1,31 @@
+# Slack app manifest for the AgilePoker /poker command.
+# Create the app at https://api.slack.com/apps -> Create New App -> From a manifest,
+# paste this file, then follow "Slack app setup" in the README.
+display_information:
+  name: AgilePoker
+  description: Start a planning poker room from any channel. Votes stay hidden until reveal.
+  long_description: "Type /poker with a ticket key and title, and AgilePoker posts a room link in the channel. Everyone joins in the browser, no sign-up, and votes stay hidden until someone reveals them. Rooms expire after 24 hours of inactivity. The app only has the commands scope: it cannot read messages, channels or users."
+  background_color: "#E7651C"
+features:
+  bot_user:
+    display_name: AgilePoker
+    always_online: false
+  slash_commands:
+    - command: /poker
+      url: https://poker-rooms.pointing-poker.workers.dev/slack/commands
+      description: Start a planning poker room
+      usage_hint: "[PROJ-123] [ticket title] or help"
+      should_escape: false
+oauth_config:
+  redirect_urls:
+    - https://poker-rooms.pointing-poker.workers.dev/slack/oauth
+  scopes:
+    bot:
+      - commands
+settings:
+  interactivity:
+    is_enabled: true
+    request_url: https://poker-rooms.pointing-poker.workers.dev/slack/interactions
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

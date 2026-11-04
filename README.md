@@ -29,6 +29,8 @@ Browser (Next.js on Vercel)  ──WebSocket──▶  Cloudflare Worker "poker-
 | `lib/auth-provider.tsx` | Guest identity (display name + random participant ID) |
 | `shared/room-protocol.ts` | Message types and limits shared by client and server |
 | `worker/` | Cloudflare Worker + `Room` Durable Object |
+| `worker/src/slack.ts` | Slack `/poker` slash command and Add to Slack install |
+| `slack/manifest.yml` | Slack app manifest |
 | `app/api/jira/` | Optional Jira ticket import (off unless configured) |
 
 ## Local development
@@ -49,12 +51,32 @@ Protocol test (needs the room server running):
 
 ```bash
 npm --prefix worker run test:protocol
+npm --prefix worker run test:slack   # needs SLACK_SIGNING_SECRET=local-test-secret in worker/.dev.vars
 ```
 
 ## Deploy
 
 1. **Room server:** `cd worker && npx wrangler login && npx wrangler deploy`. Add your app's production origin to `ALLOWED_ORIGINS` in `worker/wrangler.jsonc` first.
 2. **App:** the client defaults to `https://poker-rooms.pointing-poker.workers.dev`; set `NEXT_PUBLIC_ROOMS_URL` only to point somewhere else.
+
+## Slack: `/poker`
+
+`/poker PROJ-123 Login times out` creates a room with that ticket open for voting and posts a "Join and vote" button in the channel. `/poker` alone opens an empty room, a Jira issue URL links the ticket, and `/poker help` shows usage privately.
+
+The app asks for the `commands` scope only. The reply goes back in the slash command's HTTP response, so no Slack tokens are stored; the Worker checks Slack's request signature (HMAC-SHA256, 5-minute replay window) on every call.
+
+### Slack app setup
+
+1. Create the app at [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From a manifest**, and paste `slack/manifest.yml`.
+2. Give the Worker the secrets from **Basic Information → App Credentials**:
+   ```bash
+   cd worker
+   npx wrangler secret put SLACK_SIGNING_SECRET
+   npx wrangler secret put SLACK_CLIENT_SECRET
+   ```
+   and set `SLACK_CLIENT_ID` in `wrangler.jsonc` `vars` (it is public).
+3. `npx wrangler deploy`, then **Install to Workspace** from the app settings to try it in your own workspace.
+4. To let other workspaces install it, turn on **Manage Distribution → Public Distribution** and send people to `https://poker-rooms.pointing-poker.workers.dev/slack/install`.
 
 ## Optional: Jira import
 

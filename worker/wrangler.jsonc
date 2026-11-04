@@ -7,7 +7,10 @@
     "bindings": [{ "name": "ROOM", "class_name": "Room" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  // Slack secrets (wrangler secret put): SLACK_SIGNING_SECRET, SLACK_CLIENT_SECRET.
+  // SLACK_CLIENT_ID is public; set it here once the Slack app exists.
   "vars": {
+    "APP_URL": "https://agilepoker.dev",
     "ALLOWED_ORIGINS": "http://localhost:3000,https://agilepoker.dev,https://www.agilepoker.dev,https://poker-ai-eta.vercel.app,https://poker-*-ttarlovs-projects.vercel.app,https://poker-ai-git-*-ttarlovs-projects.vercel.app"
   },
   // 60 new connections or room lookups per minute per IP (approximate, per location).
