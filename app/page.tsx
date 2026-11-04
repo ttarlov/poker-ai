@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useAuth } from "@/lib/auth-provider";
+import SupportLink from "@/components/SupportLink";
 
 export default function Home() {
   return (
@@ -235,6 +236,9 @@ function HomeContent() {
                 style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
             Free · No sign-up · Rooms expire after 24h
           </span>
+          <div className="mt-4">
+            <SupportLink />
+          </div>
         </div>
       </div>
     </div>
