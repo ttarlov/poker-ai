@@ -1,9 +1,9 @@
 "use client";
 
 // "Buy me a coffee" tip link. Payment happens entirely on buymeacoffee.com;
-// this app never sees card details. Hidden when no URL is configured.
+// this app never sees card details. Set NEXT_PUBLIC_BUY_ME_A_COFFEE_URL="" to hide it.
 export const BUY_ME_A_COFFEE_URL =
-  process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL || "";
+  process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL ?? "https://buymeacoffee.com/agilepoker";
 
 export default function SupportLink() {
   if (!BUY_ME_A_COFFEE_URL) return null;
