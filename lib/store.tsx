@@ -79,7 +79,9 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
-const ROOMS_URL = (process.env.NEXT_PUBLIC_ROOMS_URL || "http://localhost:8787").replace(/\/$/, "");
+// Public room server. Override with NEXT_PUBLIC_ROOMS_URL (e.g. http://localhost:8787 for `npm run dev:rooms`).
+const DEFAULT_ROOMS_URL = "https://poker-rooms.pointing-poker.workers.dev";
+const ROOMS_URL = (process.env.NEXT_PUBLIC_ROOMS_URL || DEFAULT_ROOMS_URL).replace(/\/$/, "");
 const ROOMS_WS_URL = ROOMS_URL.replace(/^http/, "ws");
 
 const JIRA_CACHE_TTL = 60 * 60 * 1000; // 1 hour

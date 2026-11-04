@@ -52,7 +52,7 @@ npm --prefix worker run test:protocol
 ## Deploy
 
 1. **Room server:** `cd worker && npx wrangler login && npx wrangler deploy`. Add your app's production origin to `ALLOWED_ORIGINS` in `worker/wrangler.jsonc` first.
-2. **App:** set `NEXT_PUBLIC_ROOMS_URL` in Vercel to the Worker URL (e.g. `https://poker-rooms.<account>.workers.dev`) and deploy.
+2. **App:** the client defaults to `https://poker-rooms.pointing-poker.workers.dev`; set `NEXT_PUBLIC_ROOMS_URL` only to point somewhere else.
 
 ## Optional: Jira import
 
