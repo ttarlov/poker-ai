@@ -37,10 +37,17 @@ interface Attachment {
 export interface Env {
   ROOM: DurableObjectNamespace<Room>;
   ALLOWED_ORIGINS: string;
+  CONNECT_LIMITER?: RateLimit;
 }
+
+// Per-connection message budget: a burst of this many, refilled continuously.
+const MSG_BURST = 30;
+const MSG_REFILL_PER_SEC = 3;
 
 export class Room extends DurableObject<Env> {
   private room: StoredRoom | null = null;
+  // In-memory token buckets per socket; resets on hibernation, which is fine.
+  private buckets = new WeakMap<WebSocket, { tokens: number; at: number }>();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -70,6 +77,12 @@ export class Room extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
+    if (!this.takeToken(ws)) {
+      this.sendError(ws, "bad_request", "Slow down");
+      ws.close(4029, "rate_limited");
+      return;
+    }
+
     if (typeof raw !== "string" || raw.length > LIMITS.messageBytes) {
       return this.sendError(ws, "bad_request", "Message too large or not text");
     }
@@ -229,6 +242,20 @@ export class Room extends DurableObject<Env> {
   }
 
   // ── helpers ─────────────────────────────────────────────────────────
+
+  private takeToken(ws: WebSocket): boolean {
+    const now = Date.now();
+    const b = this.buckets.get(ws) ?? { tokens: MSG_BURST, at: now };
+    b.tokens = Math.min(MSG_BURST, b.tokens + ((now - b.at) / 1000) * MSG_REFILL_PER_SEC);
+    b.at = now;
+    if (b.tokens < 1) {
+      this.buckets.set(ws, b);
+      return false;
+    }
+    b.tokens -= 1;
+    this.buckets.set(ws, b);
+    return true;
+  }
 
   private ticket(id: unknown): Ticket | undefined {
     return this.room?.tickets.find(t => t.id === id);

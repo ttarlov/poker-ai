@@ -11,8 +11,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    const allowed = (env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
-    const originOk = !origin || allowed.includes(origin);
+    const originOk = !origin || originAllowed(origin, env.ALLOWED_ORIGINS);
     const cors: Record<string, string> = origin && originOk
       ? { "Access-Control-Allow-Origin": origin, "Vary": "Origin" }
       : {};
@@ -26,6 +25,14 @@ export default {
     const match = url.pathname.match(/^\/rooms\/([^/]+)(\/exists)?$/);
     if (!match || request.method !== "GET") return new Response("Not found", { status: 404, headers: cors });
     if (!originOk) return new Response("Origin not allowed", { status: 403 });
+
+    // Per-IP cap on new connections and room lookups. Messages inside an open
+    // socket are throttled by the room itself.
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    if (env.CONNECT_LIMITER) {
+      const { success } = await env.CONNECT_LIMITER.limit({ key: ip });
+      if (!success) return new Response("Too many requests", { status: 429, headers: cors });
+    }
 
     const code = decodeURIComponent(match[1]).toUpperCase();
     if (!ROOM_CODE_PATTERN.test(code)) return new Response("Bad room code", { status: 400, headers: cors });
@@ -43,3 +50,23 @@ export default {
     return res;
   },
 } satisfies ExportedHandler<Env>;
+
+// ALLOWED_ORIGINS is a comma-separated list; an entry may contain "*" to match
+// one hostname segment, e.g. https://poker-*-ttarlovs-projects.vercel.app
+function originAllowed(origin: string, list: string): boolean {
+  for (const raw of (list || "").split(",")) {
+    const entry = raw.trim();
+    if (!entry) continue;
+    if (!entry.includes("*")) {
+      if (entry === origin) return true;
+      continue;
+    }
+    const pattern = new RegExp("^" + entry.split("*").map(escapeRegExp).join("[a-z0-9-]+") + "$");
+    if (pattern.test(origin)) return true;
+  }
+  return false;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

@@ -68,7 +68,11 @@ r = await fetch(`${BASE}/rooms/bad/exists`);
 assert.equal(r.status, 400);
 r = await fetch(`${BASE}/rooms/${room}/exists`, { headers: { Origin: "https://evil.example" } });
 assert.equal(r.status, 403);
-step("bad codes and unlisted origins are rejected");
+r = await fetch(`${BASE}/rooms/${room}/exists`, { headers: { Origin: "https://poker-abc123xyz-ttarlovs-projects.vercel.app" } });
+assert.equal(r.status, 200, "vercel preview origin allowed");
+r = await fetch(`${BASE}/rooms/${room}/exists`, { headers: { Origin: "https://poker-x-ttarlovs-projects.vercel.app.evil.com" } });
+assert.equal(r.status, 403, "lookalike origin rejected");
+step("bad codes and unlisted origins are rejected; preview origins allowed");
 
 // 3. Create + join three players
 const alice = await new Client(room, "pid-alice", "Alice").open();

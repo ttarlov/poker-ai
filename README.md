@@ -1,4 +1,4 @@
-# PokerAI — Pointing Poker
+# AgilePoker — Planning Poker
 
 Real-time pointing poker for dev teams. Share a link, vote on tickets, reveal together. No accounts and no database: each room lives in its own Cloudflare Durable Object and is deleted after 24 hours of inactivity.
 

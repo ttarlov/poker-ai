@@ -153,7 +153,7 @@ export default function SessionRoom() {
           <div className="flex items-center gap-3">
             <h1 className="font-display text-xl cursor-pointer" style={{ color: "var(--text-primary)" }}
                 onClick={() => router.push("/")}>
-              Poker<span style={{ color: "var(--accent)" }}>AI</span>
+              Agile<span style={{ color: "var(--accent)" }}>Poker</span>
             </h1>
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-xs px-2 py-0.5 rounded font-mono"

@@ -5,8 +5,8 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth-provider";
 
 export const metadata: Metadata = {
-  title: "PokerAI — Pointing Poker",
-  description: "AI-Powered Pointing Poker",
+  title: "AgilePoker — Planning Poker for Dev Teams",
+  description: "Free real-time planning poker for agile teams. No sign-up; rooms expire after 24 hours.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

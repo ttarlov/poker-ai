@@ -8,7 +8,11 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:3000,https://poker-ai-eta.vercel.app"
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://agilepoker.dev,https://www.agilepoker.dev,https://poker-ai-eta.vercel.app,https://poker-*-ttarlovs-projects.vercel.app,https://poker-ai-git-*-ttarlovs-projects.vercel.app"
   },
+  // 60 new connections or room lookups per minute per IP (approximate, per location).
+  "ratelimits": [
+    { "name": "CONNECT_LIMITER", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } }
+  ],
   "observability": { "enabled": true }
 }

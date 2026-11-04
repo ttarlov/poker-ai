@@ -101,7 +101,7 @@ function HomeContent() {
           </div>
           <h1 className="font-display text-5xl tracking-tight mb-2"
               style={{ color: "var(--text-primary)" }}>
-            Poker<span style={{ color: "var(--accent)" }}>AI</span>
+            Agile<span style={{ color: "var(--accent)" }}>Poker</span>
           </h1>
           <p className="text-sm tracking-widest uppercase"
              style={{ color: "var(--text-secondary)" }}>
