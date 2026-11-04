@@ -1,5 +1,7 @@
 # AgilePoker — Planning Poker
 
+**Live: [agilepoker.dev](https://agilepoker.dev)** · Support it: [buymeacoffee.com/agilepoker](https://buymeacoffee.com/agilepoker)
+
 Real-time pointing poker for dev teams. Share a link, vote on tickets, reveal together. No accounts and no database: each room lives in its own Cloudflare Durable Object and is deleted after 24 hours of inactivity.
 
 ## How it works
