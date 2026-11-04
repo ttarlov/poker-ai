@@ -5,15 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "dev:rooms": "npm --prefix worker run dev"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.9.0",
-    "@supabase/supabase-js": "^2.49.1",
     "next": "16.4.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "partysocket": "1.3.0"
   },
   "devDependencies": {
     "@types/node": "^20",

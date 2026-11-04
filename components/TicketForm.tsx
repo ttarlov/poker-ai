@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 
+// Jira import only makes sense on a deployment configured with a Jira token.
+const JIRA_ENABLED = process.env.NEXT_PUBLIC_JIRA_ENABLED === "1";
+
 export default function TicketForm({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -100,6 +103,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
           <h2 className="font-display text-xl mb-1" style={{ color: "var(--text-primary)" }}>Add Ticket</h2>
 
           {/* Mode Toggle */}
+          {JIRA_ENABLED && (
           <div className="flex gap-2 mb-5 mt-3">
             <button
               type="button"
@@ -127,6 +131,7 @@ export default function TicketForm({ onClose }: { onClose: () => void }) {
               Load from Jira
             </button>
           </div>
+          )}
 
           {/* Jira Loader */}
           {mode === "jira" && (

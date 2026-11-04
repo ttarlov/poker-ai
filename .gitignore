@@ -1,3 +1,9 @@
 node_modules/
 .next/
 .env.local
+.env*.local
+.DS_Store
+tsconfig.tsbuildinfo
+.wrangler/
+worker/.dev.vars
+.claude/

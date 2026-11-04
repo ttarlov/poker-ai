@@ -18,11 +18,8 @@ export default function SessionRoom() {
   const router = useRouter();
   const params = useParams();
   const roomCode = (params.room_code as string)?.toUpperCase();
-  const { gameState, joinRoom, startVoting, roomError, loading, ready } = useStore();
-  const {
-    user, loading: authLoading, signOut, signInWithGoogle,
-    isGuest, displayName, continueAsGuest,
-  } = useAuth();
+  const { gameState, joinRoom, leaveRoom, startVoting, roomError, ready, connection } = useStore();
+  const { loading: authLoading, isGuest, displayName, continueAsGuest } = useAuth();
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -30,7 +27,7 @@ export default function SessionRoom() {
   const attemptedRef = useRef(false);
   const searchParams = useSearchParams();
 
-  const hasIdentity = !!user || isGuest;
+  const hasIdentity = isGuest;
 
   // ── Opt-in preview of the consensus celebration ──────────────────────
   // Lets you eyeball the animation without orchestrating a real unanimous
@@ -62,8 +59,9 @@ export default function SessionRoom() {
     joinRoom(roomCode, displayName || "Player");
   }, [ready, authLoading, hasIdentity, roomCode, displayName]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleLeave = () => {
+    leaveRoom();
+    router.push("/");
   };
 
   const copyRoomLink = () => {
@@ -99,7 +97,7 @@ export default function SessionRoom() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm text-center">
           <h2 className="font-display text-2xl mb-2" style={{ color: "var(--text-primary)" }}>
-            Join as Guest
+            Join the Room
           </h2>
           <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
             Enter your name to join room <span className="font-mono" style={{ color: "var(--accent)" }}>{roomCode}</span>
@@ -117,11 +115,6 @@ export default function SessionRoom() {
               Join Room
             </button>
           </form>
-          <button onClick={() => signInWithGoogle(`/session/${roomCode}`)}
-            className="mt-4 text-sm transition-all hover:opacity-70"
-            style={{ color: "var(--text-secondary)" }}>
-            or sign in with Google
-          </button>
         </div>
       </div>
     );
@@ -134,7 +127,7 @@ export default function SessionRoom() {
         <div className="text-center">
           <div className="text-3xl mb-3 animate-pulse-soft">🃏</div>
           <p style={{ color: "var(--text-muted)" }}>
-            {authLoading ? "Authenticating..." : "Joining room..."}
+            {authLoading ? "Loading..." : connection === "reconnecting" ? "Reconnecting..." : "Joining room..."}
           </p>
         </div>
       </div>
@@ -148,6 +141,12 @@ export default function SessionRoom() {
   return (
     <div className="min-h-screen flex flex-col">
       {previewEnabled && previewNuke && <NuclearConsensus onDone={() => setPreviewNuke(false)} />}
+      {connection === "reconnecting" && (
+        <div className="text-center text-xs py-1.5"
+             style={{ background: "color-mix(in srgb, var(--status-idle) 20%, transparent)", color: "var(--text-secondary)" }}>
+          Connection lost. Reconnecting... your votes are saved.
+        </div>
+      )}
       <header className="backdrop-blur-sm"
               style={{ borderBottom: "1px solid var(--header-border)", background: "var(--header-bg)" }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -183,12 +182,7 @@ export default function SessionRoom() {
           </div>
           <div className="flex items-center gap-2">
             <ParticipantList participants={gameState.participants} />
-            <UserMenu
-              displayName={displayName}
-              isGuest={isGuest}
-              onSignOut={handleSignOut}
-              onSignIn={() => signInWithGoogle(`/session/${roomCode}`)}
-            />
+            <UserMenu displayName={displayName} onLeave={handleLeave} />
           </div>
         </div>
       </header>

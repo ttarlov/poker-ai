@@ -4,6 +4,7 @@ interface Participant {
   id: string;
   participant_id: string;
   display_name: string;
+  online?: boolean;
 }
 
 const AVATAR_COLORS = [
@@ -24,11 +25,13 @@ export default function ParticipantList({ participants }: { participants: Partic
             {p.display_name.charAt(0).toUpperCase()}
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2"
-               style={{ background: "var(--status-active)", boxShadow: "0 0 4px var(--status-active)" }} />
+               style={p.online === false
+                 ? { background: "var(--status-offline)" }
+                 : { background: "var(--status-active)", boxShadow: "0 0 4px var(--status-active)" }} />
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1
                           bg-gray-900 text-white text-xs rounded whitespace-nowrap
                           opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20">
-            {p.display_name}
+            {p.display_name}{p.online === false ? " (away)" : ""}
           </div>
         </div>
       ))}

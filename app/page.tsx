@@ -28,13 +28,11 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const { createRoom, checkRoom } = useStore();
   const {
-    user, loading: authLoading, signInWithGoogle, signOut,
-    isGuest, guestName, displayName, continueAsGuest, clearGuest,
+    loading: authLoading, isGuest, displayName, continueAsGuest, clearGuest,
   } = useAuth();
 
   const redirectTo = searchParams.get("redirect");
-  const hasIdentity = !!user || isGuest;
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const hasIdentity = isGuest;
 
   // Auto-redirect when identity is established and redirect param exists
   useEffect(() => {
@@ -42,10 +40,6 @@ function HomeContent() {
       router.push(redirectTo);
     }
   }, [authLoading, hasIdentity, redirectTo, router]);
-
-  const handleSignIn = () => {
-    signInWithGoogle(redirectTo || undefined);
-  };
 
   const handleGuestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +82,7 @@ function HomeContent() {
 
   const formatCode = (val: string) => {
     const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    if (clean.length > 3) return `${clean.slice(0, 3)}-${clean.slice(3, 6)}`;
+    if (clean.length > 4) return `${clean.slice(0, 4)}-${clean.slice(4, 8)}`;
     return clean;
   };
 
@@ -123,27 +117,9 @@ function HomeContent() {
           </div>
         )}
 
-        {/* No identity: Sign in or Continue as Guest */}
+        {/* No identity yet: pick a display name */}
         {!authLoading && !hasIdentity && (
           <div className="space-y-4 animate-fade-in">
-            <button onClick={handleSignIn}
-              className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-3"
-              style={{ background: "var(--btn-secondary-bg)", color: "var(--btn-secondary-text)", border: "1px solid var(--btn-secondary-border)" }}>
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Sign in with Google
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
-              <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>or</span>
-              <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
-            </div>
-
             <form onSubmit={handleGuestSubmit} className="space-y-3">
               <input
                 type="text"
@@ -161,46 +137,34 @@ function HomeContent() {
                 disabled={!guestNameInput.trim()}
                 className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                 style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
-                Continue as Guest
+                Continue
               </button>
             </form>
 
             {redirectTo && (
               <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                Sign in or enter your name to join the session
+                Enter your name to join the session
               </p>
             )}
           </div>
         )}
 
-        {/* Has identity (auth or guest): Identity bar + Room actions */}
+        {/* Has a name: identity bar + room actions */}
         {!authLoading && hasIdentity && (
           <>
             {/* Identity bar */}
             <div className="flex items-center justify-center gap-3 mb-8 py-3 px-4 rounded-full"
                  style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
-              ) : (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                     style={{ background: "var(--accent)", color: "var(--text-on-accent)" }}>
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                   style={{ background: "var(--accent)", color: "var(--text-on-accent)" }}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{displayName}</span>
-              {user ? (
-                <button onClick={() => signOut()}
-                  className="text-xs ml-auto transition-all hover:opacity-70"
-                  style={{ color: "var(--text-muted)" }}>
-                  Sign out
-                </button>
-              ) : (
-                <button onClick={() => clearGuest()}
-                  className="text-xs ml-auto transition-all hover:opacity-70"
-                  style={{ color: "var(--text-muted)" }}>
-                  Change
-                </button>
-              )}
+              <button onClick={() => clearGuest()}
+                className="text-xs ml-auto transition-all hover:opacity-70"
+                style={{ color: "var(--text-muted)" }}>
+                Change
+              </button>
             </div>
 
             {mode === "home" && (
@@ -247,14 +211,14 @@ function HomeContent() {
                 <div>
                   <label className="block text-xs mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Room Code</label>
                   <input type="text" value={joinCode} onChange={e => setJoinCode(formatCode(e.target.value))}
-                    placeholder="ABC-123" maxLength={7} autoFocus
+                    placeholder="ABCD-2345" maxLength={9} autoFocus
                     className="w-full px-4 py-3 rounded-full text-center text-2xl font-mono tracking-widest transition-all focus:outline-none uppercase"
                     style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--accent)" }}
                     onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
                     onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
                 </div>
                 {error && <p className="text-sm" style={{ color: "var(--red-suit)" }}>{error}</p>}
-                <button type="submit" disabled={joinCode.length < 7 || loading}
+                <button type="submit" disabled={joinCode.length < 9 || loading}
                   className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                   style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
                   {loading ? "Joining..." : "Join Room"}
@@ -269,7 +233,7 @@ function HomeContent() {
         <div className="text-center mt-10">
           <span className="inline-block px-3 py-1 text-[10px] tracking-widest uppercase rounded-full"
                 style={{ color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-            V1 — Supabase
+            Free · No sign-up · Rooms expire after 24h
           </span>
         </div>
       </div>
