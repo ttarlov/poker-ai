@@ -1,0 +1,206 @@
+"use client";
+
+// Interactive part of the landing page: pick a name, then create or join a room.
+// The hero and the explainer around it are server-rendered in app/page.tsx.
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useStore } from "@/lib/store";
+import { useAuth } from "@/lib/auth-provider";
+
+export default function HomeActions() {
+  const [mode, setMode] = useState<"home" | "create" | "join">("home");
+  const [sessionName, setSessionName] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [guestNameInput, setGuestNameInput] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { createRoom, checkRoom } = useStore();
+  const {
+    loading: authLoading, isGuest, displayName, continueAsGuest, clearGuest,
+  } = useAuth();
+
+  const redirectTo = searchParams.get("redirect");
+  const hasIdentity = isGuest;
+
+  // Auto-redirect when identity is established and redirect param exists
+  useEffect(() => {
+    if (!authLoading && hasIdentity && redirectTo) {
+      router.push(redirectTo);
+    }
+  }, [authLoading, hasIdentity, redirectTo, router]);
+
+  const handleGuestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = guestNameInput.trim();
+    if (!name) return;
+    continueAsGuest(name);
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const room = await createRoom(sessionName.trim() || "Planning Session");
+      router.push(`/session/${room.code}`);
+    } catch {
+      setError("Failed to create room");
+      setLoading(false);
+    }
+  };
+
+  const handleJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) { setError("Enter a room code"); return; }
+    setError("");
+    setLoading(true);
+    try {
+      const result = await checkRoom(joinCode.trim());
+      if (result.exists) {
+        router.push(`/session/${result.code}`);
+      } else {
+        setError("Room not found — check the code and try again");
+        setLoading(false);
+      }
+    } catch {
+      setError("Failed to check room");
+      setLoading(false);
+    }
+  };
+
+  const formatCode = (val: string) => {
+    const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (clean.length > 4) return `${clean.slice(0, 4)}-${clean.slice(4, 8)}`;
+    return clean;
+  };
+
+  return (
+    <div className="w-full">
+      <div>
+        {/* Auth loading state */}
+        {authLoading && (
+          <div className="text-center py-8">
+            <div className="text-3xl mb-3 animate-pulse-soft">🃏</div>
+            <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+          </div>
+        )}
+
+        {/* No identity yet: pick a display name */}
+        {!authLoading && !hasIdentity && (
+          <div className="space-y-4 animate-fade-in">
+            <form onSubmit={handleGuestSubmit} className="space-y-3">
+              <input
+                type="text"
+                value={guestNameInput}
+                onChange={e => setGuestNameInput(e.target.value)}
+                placeholder="Enter your name"
+                maxLength={24}
+                className="w-full px-4 py-3 rounded-full text-center transition-all focus:outline-none"
+                style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
+                onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
+                onBlur={e => e.target.style.borderColor = "var(--input-border)"}
+              />
+              <button
+                type="submit"
+                disabled={!guestNameInput.trim()}
+                className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                style={{ background: "linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))", color: "var(--btn-primary-text)" }}>
+                Continue
+              </button>
+            </form>
+
+            {redirectTo && (
+              <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                Enter your name to join the session
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Has a name: identity bar + room actions */}
+        {!authLoading && hasIdentity && (
+          <>
+            {/* Identity bar */}
+            <div className="flex items-center justify-center gap-3 mb-8 py-3 px-4 rounded-full"
+                 style={{ background: "var(--input-bg)", border: "1px solid var(--border-subtle)" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                   style={{ background: "var(--accent)", color: "var(--text-on-accent)" }}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{displayName}</span>
+              <button onClick={() => clearGuest()}
+                className="text-xs ml-auto transition-all hover:opacity-70"
+                style={{ color: "var(--text-muted)" }}>
+                Change
+              </button>
+            </div>
+
+            {mode === "home" && (
+              <div className="space-y-3 animate-fade-in">
+                <button onClick={() => setMode("create")}
+                  className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg transition-all duration-200"
+                  style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
+                  Create a Room
+                </button>
+                <button onClick={() => setMode("join")}
+                  className="w-full py-4 font-bold text-lg rounded-full transition-all duration-200"
+                  style={{ background: "var(--btn-secondary-bg)", color: "var(--btn-secondary-text)", border: "1px solid var(--btn-secondary-border)" }}>
+                  Join with Code
+                </button>
+              </div>
+            )}
+
+            {mode === "create" && (
+              <form onSubmit={handleCreate} className="space-y-4 animate-fade-in">
+                <div>
+                  <label className="block text-xs mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                    Session Name <span style={{ opacity: 0.5 }}>(optional)</span>
+                  </label>
+                  <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
+                    placeholder="e.g. Sprint 43 Planning" maxLength={60} autoFocus
+                    className="w-full px-4 py-3 rounded-full transition-all focus:outline-none"
+                    style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-primary)" }}
+                    onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
+                    onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
+                </div>
+                {error && <p className="text-sm" style={{ color: "var(--red-suit)" }}>{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                  style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
+                  {loading ? "Creating..." : "Create & Join"}
+                </button>
+                <button type="button" onClick={() => { setMode("home"); setError(""); }}
+                  className="w-full py-2 text-sm transition-all" style={{ color: "var(--text-secondary)" }}>← Back</button>
+              </form>
+            )}
+
+            {mode === "join" && (
+              <form onSubmit={handleJoin} className="space-y-4 animate-fade-in">
+                <div>
+                  <label className="block text-xs mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Room Code</label>
+                  <input type="text" value={joinCode} onChange={e => setJoinCode(formatCode(e.target.value))}
+                    placeholder="ABCD-2345" maxLength={9} autoFocus
+                    className="w-full px-4 py-3 rounded-full text-center text-2xl font-mono tracking-widest transition-all focus:outline-none uppercase"
+                    style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--accent)" }}
+                    onFocus={e => e.target.style.borderColor = "var(--input-focus-border)"}
+                    onBlur={e => e.target.style.borderColor = "var(--input-border)"} />
+                </div>
+                {error && <p className="text-sm" style={{ color: "var(--red-suit)" }}>{error}</p>}
+                <button type="submit" disabled={joinCode.length < 9 || loading}
+                  className="w-full py-4 font-bold text-lg rounded-full hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                  style={{ background: `linear-gradient(to right, var(--btn-primary-from), var(--btn-primary-to))`, color: "var(--btn-primary-text)" }}>
+                  {loading ? "Joining..." : "Join Room"}
+                </button>
+                <button type="button" onClick={() => { setMode("home"); setError(""); }}
+                  className="w-full py-2 text-sm transition-all" style={{ color: "var(--text-secondary)" }}>← Back</button>
+              </form>
+            )}
+          </>
+        )}
+
+      </div>
+    </div>
+  );
+}
