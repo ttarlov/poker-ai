@@ -34,6 +34,10 @@ const FAQ = [
     a: "Rooms are deleted automatically after 24 hours without activity. Room codes are random and rooms can't be browsed or listed.",
   },
   {
+    q: "Do you track me?",
+    a: "No. We count rooms and votes, nothing about who you are. The counts are daily totals with no names, room names, tickets or vote values in them, and page visits are measured with Vercel's cookieless analytics. No ads, no tracking cookies.",
+  },
+  {
     q: "Which cards are in the deck?",
     a: "0.5, 1, 2, 3, 4 and 5 story points, plus ? for unsure and ☕ for a break.",
   },

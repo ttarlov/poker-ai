@@ -1,4 +1,5 @@
 import type { Env } from "./room";
+import { count } from "./stats";
 
 // POST /feedback — the "Suggest a feature" form. The browser posts here; the Worker
 // screens the request and forwards it to the owner's inbox (tarastarlov.com Comms)
@@ -11,7 +12,7 @@ const MAX_BODY = 8 * 1024;
 const LIMITS = { message: 2000, email: 200 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export async function handleFeedback(request: Request, env: Env, cors: Record<string, string>): Promise<Response> {
+export async function handleFeedback(request: Request, env: Env, cors: Record<string, string>, ctx?: ExecutionContext): Promise<Response> {
   const reply = (status: number, body: object) => Response.json(body, { status, headers: cors });
 
   if (request.method !== "POST") return reply(405, { error: "Method not allowed" });
@@ -58,7 +59,10 @@ export async function handleFeedback(request: Request, env: Env, cors: Record<st
   } catch {
     return reply(502, { error: "Couldn't send right now. Try again shortly." });
   }
-  if (res.ok) return reply(200, { ok: true });
+  if (res.ok) {
+    ctx?.waitUntil(count(env, "suggestion_sent"));
+    return reply(200, { ok: true });
+  }
 
   // Pass the inbox's own user-facing errors (rate limits, validation) through.
   const data = (await res.json().catch(() => ({}))) as { error?: string };
