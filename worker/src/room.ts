@@ -8,6 +8,7 @@ import {
   type Ticket,
   type Vote,
 } from "../../shared/room-protocol";
+import { count, type Stats, type StatEvent } from "./stats";
 
 // A room is deleted this long after its last activity once nobody is connected.
 const IDLE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -27,6 +28,8 @@ interface StoredRoom {
   currentTicketId: string | null;
   // ticketId -> participantId -> value
   votes: Record<string, Record<string, string>>;
+  // Set once the room has had 2 people, so "room_used" is counted once per room.
+  used?: boolean;
 }
 
 interface Attachment {
@@ -36,6 +39,8 @@ interface Attachment {
 
 export interface Env {
   ROOM: DurableObjectNamespace<Room>;
+  STATS: DurableObjectNamespace<Stats>;
+  STATS_TOKEN?: string;
   ALLOWED_ORIGINS: string;
   CONNECT_LIMITER?: RateLimit;
   APP_URL?: string;
@@ -119,6 +124,7 @@ export class Room extends DurableObject<Env> {
     }
     this.room = room;
     await this.save();
+    this.count("room_created_slack");
     return true;
   }
 
@@ -178,12 +184,14 @@ export class Room extends DurableObject<Env> {
         const value = str(msg.value, LIMITS.voteValue);
         if (!value) return this.sendError(ws, "bad_request", "Empty vote");
         (room.votes[ticket.id] ??= {})[pid] = value;
+        this.count("vote_cast");
         break;
       }
       case "reveal": {
         const ticket = this.ticket(msg.ticketId);
         if (!ticket || ticket.status !== "voting") return this.sendError(ws, "bad_request", "Ticket is not being voted on");
         ticket.status = "revealed";
+        this.count("cards_revealed");
         break;
       }
       case "lock": {
@@ -191,6 +199,7 @@ export class Room extends DurableObject<Env> {
         if (!ticket) return this.sendError(ws, "bad_request", "Unknown ticket");
         ticket.status = "complete";
         ticket.final_estimate = str(msg.estimate, LIMITS.voteValue) || null;
+        this.count("estimate_locked");
         break;
       }
       case "revote": {
@@ -262,6 +271,7 @@ export class Room extends DurableObject<Env> {
         currentTicketId: null,
         votes: {},
       };
+      this.count("room_created_web");
     }
 
     const room = this.room;
@@ -278,12 +288,24 @@ export class Room extends DurableObject<Env> {
       last_seen_at: now,
     };
 
+    if (!existing) {
+      this.count("person_joined");
+      if (!room.used && Object.keys(room.participants).length >= 2) {
+        room.used = true;
+        this.count("room_used");
+      }
+    }
+
     ws.serializeAttachment({ ...this.attachment(ws), pid } satisfies Attachment);
     await this.save();
     this.broadcast();
   }
 
   // ── helpers ─────────────────────────────────────────────────────────
+
+  private count(event: StatEvent) {
+    this.ctx.waitUntil(count(this.env, event));
+  }
 
   private takeToken(ws: WebSocket): boolean {
     const now = Date.now();

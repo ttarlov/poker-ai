@@ -2,21 +2,25 @@ import { ROOM_CODE_PATTERN } from "../../shared/room-protocol";
 import { Room, type Env } from "./room";
 import { handleSlack } from "./slack";
 import { handleFeedback } from "./feedback";
+import { Stats, handleStats } from "./stats";
 
-export { Room };
+export { Room, Stats };
 
 // Routes:
 //   GET /rooms/:code          WebSocket upgrade into that room's Durable Object
 //   GET /rooms/:code/exists   { exists, name?, code? } (CORS-enabled)
 //   POST /feedback            "Suggest a feature" form → owner's inbox (see feedback.ts)
 //   GET /health               liveness check
+//   GET /stats, /stats/data   owner-only usage counters (see stats.ts)
 //   /slack/*                  Slack slash command + install (see slack.ts)
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // Slack calls are server-to-server and signed; they skip the browser origin checks.
     if (url.pathname.startsWith("/slack/")) return handleSlack(request, env, url);
+    // Same-origin page plus a bearer-token JSON endpoint; no CORS.
+    if (url.pathname === "/stats" || url.pathname.startsWith("/stats/")) return handleStats(request, env, url);
 
     const origin = request.headers.get("Origin");
     const originOk = !origin || originAllowed(origin, env.ALLOWED_ORIGINS);
@@ -35,7 +39,7 @@ export default {
 
     if (url.pathname === "/feedback") {
       if (!originOk) return new Response("Origin not allowed", { status: 403 });
-      return handleFeedback(request, env, cors);
+      return handleFeedback(request, env, cors, ctx);
     }
 
     const match = url.pathname.match(/^\/rooms\/([^/]+)(\/exists)?$/);

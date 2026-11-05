@@ -4,10 +4,18 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "durable_objects": {
-    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+    "bindings": [
+      { "name": "ROOM", "class_name": "Room" },
+      // One global instance holding anonymous daily counters (see src/stats.ts).
+      { "name": "STATS", "class_name": "Stats" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
-  // Slack secrets (wrangler secret put): SLACK_SIGNING_SECRET, SLACK_CLIENT_SECRET.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] },
+    { "tag": "v2", "new_sqlite_classes": ["Stats"] }
+  ],
+  // Secrets (wrangler secret put): SLACK_SIGNING_SECRET, SLACK_CLIENT_SECRET, SUGGEST_TOKEN,
+  // STATS_TOKEN (unlocks /stats).
   // SLACK_CLIENT_ID is public (Slack app A0CEYFX69QS).
   "vars": {
     "APP_URL": "https://agilepoker.dev",

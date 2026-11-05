@@ -9,11 +9,12 @@
     "dev:rooms": "npm --prefix worker run dev"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "next": "16.4.2",
+    "partysocket": "1.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "uuid": "^11.1.0",
-    "partysocket": "1.3.0"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",

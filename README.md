@@ -52,12 +52,22 @@ Protocol test (needs the room server running):
 ```bash
 npm --prefix worker run test:protocol
 npm --prefix worker run test:slack   # needs SLACK_SIGNING_SECRET=local-test-secret in worker/.dev.vars
+npm --prefix worker run test:stats   # needs STATS_TOKEN=local-stats-token in worker/.dev.vars
 ```
 
 ## Deploy
 
 1. **Room server:** `cd worker && npx wrangler login && npx wrangler deploy`. Add your app's production origin to `ALLOWED_ORIGINS` in `worker/wrangler.jsonc` first.
 2. **App:** the client defaults to `https://poker-rooms.pointing-poker.workers.dev`; set `NEXT_PUBLIC_ROOMS_URL` only to point somewhere else.
+
+## Usage stats
+
+Two layers, neither stores personal data:
+
+- **Page visits:** Vercel Web Analytics (`components/PageAnalytics.tsx`). It sets no cookies. Room codes are replaced with `/session/[code]` and query strings are dropped before anything leaves the browser. Turn it on once with `vercel project web-analytics enable poker-ai`.
+- **Product counters:** the `Stats` Durable Object in `worker/src/stats.ts` keeps one number per UTC day per event (rooms created on the web or from Slack, rooms that reached 2 people, people joined, votes cast, reveals, estimates locked, suggestions sent). No IPs, ids, room codes, names, tickets or vote values.
+
+View the counters at `https://poker-rooms.pointing-poker.workers.dev/stats`. The page asks for `STATS_TOKEN` (a Worker secret) and remembers it in that browser.
 
 ## Slack: `/poker`
 

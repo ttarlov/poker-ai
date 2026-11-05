@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "test:protocol": "node test/protocol.test.mjs",
     "test:slack": "node test/slack.test.mjs",
-    "test:feedback": "node test/feedback.test.mjs"
+    "test:feedback": "node test/feedback.test.mjs",
+    "test:stats": "node test/stats.test.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261019.1",

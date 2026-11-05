@@ -3,6 +3,7 @@ import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth-provider";
+import PageAnalytics from "@/components/PageAnalytics";
 
 const DESCRIPTION =
   "Free online planning poker (scrum poker) for agile teams. Create a room, share the link, and vote on story points in real time. Votes stay hidden until reveal. No sign-up.";
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <StoreProvider>{children}</StoreProvider>
           </AuthProvider>
         </ThemeProvider>
+        <PageAnalytics />
       </body>
     </html>
   );
