@@ -12,6 +12,7 @@ import VotingCards from "@/components/VotingCards";
 import SessionSummary from "@/components/SessionSummary";
 import PointsSummary from "@/components/PointsSummary";
 import UserMenu from "@/components/UserMenu";
+import SuggestFeature from "@/components/SuggestFeature";
 import NuclearConsensus from "@/components/NuclearConsensus";
 
 export default function SessionRoom() {
@@ -181,6 +182,7 @@ export default function SessionRoom() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <SuggestFeature />
             <ParticipantList participants={gameState.participants} />
             <UserMenu displayName={displayName} onLeave={handleLeave} />
           </div>

@@ -81,7 +81,7 @@ const StoreContext = createContext<StoreContextType | null>(null);
 
 // Public room server. Override with NEXT_PUBLIC_ROOMS_URL (e.g. http://localhost:8787 for `npm run dev:rooms`).
 const DEFAULT_ROOMS_URL = "https://poker-rooms.pointing-poker.workers.dev";
-const ROOMS_URL = (process.env.NEXT_PUBLIC_ROOMS_URL || DEFAULT_ROOMS_URL).replace(/\/$/, "");
+export const ROOMS_URL = (process.env.NEXT_PUBLIC_ROOMS_URL || DEFAULT_ROOMS_URL).replace(/\/$/, "");
 const ROOMS_WS_URL = ROOMS_URL.replace(/^http/, "ws");
 
 // Jira import needs server-side Jira credentials; off unless explicitly enabled.
