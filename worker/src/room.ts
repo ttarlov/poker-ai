@@ -42,6 +42,9 @@ export interface Env {
   SLACK_CLIENT_ID?: string;
   SLACK_CLIENT_SECRET?: string;
   SLACK_SIGNING_SECRET?: string;
+  FEEDBACK_LIMITER?: RateLimit;
+  SUGGEST_URL?: string;
+  SUGGEST_TOKEN?: string;
 }
 
 // A ticket handed to a room at creation time (from the Slack slash command).

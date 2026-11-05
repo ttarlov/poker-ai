@@ -12,11 +12,15 @@
   "vars": {
     "APP_URL": "https://agilepoker.dev",
     "SLACK_CLIENT_ID": "12493322659687.12508541213842",
+    // Feature suggestions are forwarded here; SUGGEST_TOKEN is a secret shared with that endpoint.
+    "SUGGEST_URL": "https://tarastarlov.com/api/push?suggest=1",
     "ALLOWED_ORIGINS": "http://localhost:3000,https://agilepoker.dev,https://www.agilepoker.dev,https://poker-ai-eta.vercel.app,https://poker-*-ttarlovs-projects.vercel.app,https://poker-ai-git-*-ttarlovs-projects.vercel.app"
   },
   // 60 new connections or room lookups per minute per IP (approximate, per location).
   "ratelimits": [
-    { "name": "CONNECT_LIMITER", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } }
+    { "name": "CONNECT_LIMITER", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } },
+    // Suggestion form: 3 per minute per IP (the inbox also caps 5/hour per visitor).
+    { "name": "FEEDBACK_LIMITER", "namespace_id": "1002", "simple": { "limit": 3, "period": 60 } }
   ],
   "observability": { "enabled": true }
 }

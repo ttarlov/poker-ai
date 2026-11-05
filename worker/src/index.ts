@@ -1,12 +1,14 @@
 import { ROOM_CODE_PATTERN } from "../../shared/room-protocol";
 import { Room, type Env } from "./room";
 import { handleSlack } from "./slack";
+import { handleFeedback } from "./feedback";
 
 export { Room };
 
 // Routes:
 //   GET /rooms/:code          WebSocket upgrade into that room's Durable Object
 //   GET /rooms/:code/exists   { exists, name?, code? } (CORS-enabled)
+//   POST /feedback            "Suggest a feature" form → owner's inbox (see feedback.ts)
 //   GET /health               liveness check
 //   /slack/*                  Slack slash command + install (see slack.ts)
 export default {
@@ -23,10 +25,18 @@ export default {
       : {};
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: originOk ? 204 : 403, headers: { ...cors, "Access-Control-Allow-Methods": "GET" } });
+      return new Response(null, {
+        status: originOk ? 204 : 403,
+        headers: { ...cors, "Access-Control-Allow-Methods": "GET, POST", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "86400" },
+      });
     }
 
     if (url.pathname === "/health") return new Response("ok", { headers: cors });
+
+    if (url.pathname === "/feedback") {
+      if (!originOk) return new Response("Origin not allowed", { status: 403 });
+      return handleFeedback(request, env, cors);
+    }
 
     const match = url.pathname.match(/^\/rooms\/([^/]+)(\/exists)?$/);
     if (!match || request.method !== "GET") return new Response("Not found", { status: 404, headers: cors });
